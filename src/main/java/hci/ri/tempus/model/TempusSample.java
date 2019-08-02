@@ -2,7 +2,7 @@ package hci.ri.tempus.model;
 
 import java.util.Objects;
 
-public class TempusSample {
+public class TempusSample{
 
     private String mrn;
     private String personId;
@@ -10,7 +10,34 @@ public class TempusSample {
     private String gender;
     private String shadowId;
     private String sampleName;
+    private String sampleSubType;
+    private String testType;
+    private String tissueType;
     private String submittedDiagnosis;
+    TempusSample(){
+        this.mrn = "null";
+        this.personId = "null";
+        this.fullName = "null";
+        this.gender = "null";
+        this.shadowId = "null";
+        this.sampleName = "null";
+        this.sampleSubType = "null";
+        this.testType = "null";
+        this.tissueType = "null";
+        this.submittedDiagnosis = "null";
+    }
+    TempusSample(String sampleName){
+        this.mrn = "null";
+        this.personId = "null";
+        this.fullName = "null";
+        this.gender = "null";
+        this.shadowId = "null";
+        this.sampleName = sampleName;
+        this.sampleSubType = "null";
+        this.testType = "null";
+        this.tissueType = "null";
+        this.submittedDiagnosis = "null";
+    }
 
 
     public void setSubmittedDiagnosis(String submittedDiagnosis) {
@@ -64,8 +91,57 @@ public class TempusSample {
         this.sampleName = sampleName;
     }
 
+    public String getSampleSubType() {
+        return sampleSubType;
+    }
+
+    public void setSampleSubType(String sampleSubType) {
+        this.sampleSubType = sampleSubType;
+    }
+
+    public String getTestType() {
+        return testType;
+    }
+
+    public void setTestType(String testType) {
+        this.testType = testType;
+    }
+
+    public String getTissueType() {
+        return tissueType;
+    }
+
+    public void setTissueType(String tissueType) {
+        this.tissueType = tissueType;
+    }
+
     public String getSubmittedDiagnosis() {
         return submittedDiagnosis;
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder strBuild = new StringBuilder();
+        strBuild.append(mrn);
+        strBuild.append("\t");
+        strBuild.append(personId);
+        strBuild.append("\t");
+        strBuild.append(fullName);
+        strBuild.append("\t");
+        strBuild.append(gender);
+        strBuild.append("\t");
+        strBuild.append(shadowId);
+        strBuild.append("\t");
+        strBuild.append(sampleName);
+        strBuild.append("\t");
+        strBuild.append(sampleSubType);
+        strBuild.append("\t");
+        strBuild.append(testType);
+        strBuild.append("\t");
+        strBuild.append(tissueType);
+        strBuild.append("\t");
+        strBuild.append( submittedDiagnosis);
+        return strBuild.toString();
     }
 
     @Override
@@ -74,6 +150,7 @@ public class TempusSample {
         if (o == null || getClass() != o.getClass()) return false;
         TempusSample that = (TempusSample) o;
         return getMrn().equals(that.getMrn()) &&
+                getFullName().equals(that.fullName) &&
                 getPersonId().equals(that.getPersonId()) &&
                 getShadowId().equals(that.getShadowId());
     }
