@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0"
+             xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+    <persistence-unit name="tempus" transaction-type="RESOURCE_LOCAL">
+        <!-- Persistence provider -->
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <!-- Entity classes -->
+        <class>hci.ri.tempus.model.Order</class>
+        <class>hci.ri.tempus.model.Test</class>
+        <class>hci.ri.tempus.model.TempusFile </class>
+        <class>hci.ri.tempus.model.Patient</class>
+        <class>hci.ri.tempus.model.Specimen</class>
+        <class>hci.ri.tempus.model.Report</class>
+        <class>hci.ri.tempus.model.Result</class>
+        <class>hci.ri.tempus.model.SPActionableMutation</class>
+        <class>hci.ri.tempus.model.SPActionableCPVariant</class>
+        <class>hci.ri.tempus.model.SPBioRelevantVariant</class>
+        <class>hci.ri.tempus.model.Variant</class>
+        <class>hci.ri.tempus.model.SVUknownSignificance</class>
+        <class>hci.ri.tempus.model.InheritedVariant</class>
+        <class>hci.ri.tempus.model.LowCoverageAmplicon</class>
+        <class>hci.ri.tempus.model.FusionVariant</class>
+        <properties>
+            <!-- The JDBC driver of your database -->
+            <property name = "hibernate.show_sql" value = "true" />
+            <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServerDialect"/>
+        </properties>
+    </persistence-unit>
+</persistence>

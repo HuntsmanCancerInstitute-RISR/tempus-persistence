@@ -1,0 +1,36 @@
+
+apply plugin: 'java'
+
+def javaHome = System.getenv('JAVA_HOME')
+
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
+    compile group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '7.2.1.jre8'
+    compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.47'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.9.7'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.9.8'
+    compile group: 'org.hibernate', name: 'hibernate-core', version: '5.4.1.Final'
+    compile group: 'org.hibernate', name: 'hibernate-entitymanager', version: '5.4.1.Final'
+
+//    compile fileTree (dir: 'lib', include: 'sqljdbc4.jar');
+}
+
+jar {
+    manifest{
+        attributes 'Main-Class': 'hci.ri.tempus.model.TempusPersistenceMain'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+
+
+
+
