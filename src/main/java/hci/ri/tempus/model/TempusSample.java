@@ -132,11 +132,11 @@ public class TempusSample{
         strBuild.append("\t");
         strBuild.append(shadowId);
         strBuild.append("\t");
+        strBuild.append(testType);
+        strBuild.append("\t");
         strBuild.append(sampleName);
         strBuild.append("\t");
         strBuild.append(sampleSubType);
-        strBuild.append("\t");
-        strBuild.append(testType);
         strBuild.append("\t");
         strBuild.append(tissueType);
         strBuild.append("\t");
