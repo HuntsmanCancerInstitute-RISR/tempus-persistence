@@ -25,6 +25,7 @@ public class TempusParser {
     private static final Integer SAMPLE_ID_START= 7;
     private static final Integer SAMPLE_ID_END = 13;
     private Map<String,Specimen> specimenMap;
+    private static final Integer nucLen = 4; // ex -RNA
     private ObjectMapper objectMapper;
 
 
@@ -135,7 +136,9 @@ public class TempusParser {
                 }else {
                     String[] chunks =  fileName.split("_");
                     String fileTestType = "";
-                    List<TempusSample> samples  = tempusOtherFileList.get(chunks[0]);
+
+                    String excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
+                    List<TempusSample> samples  = tempusOtherFileList.get(excludeNucFilename);
                     String sampleName = String.join("_", Arrays.copyOfRange(chunks, 0, chunks.length - 1) );
                     TempusSample rnaSample = new TempusSample();
 
