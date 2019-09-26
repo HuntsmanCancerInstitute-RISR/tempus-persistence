@@ -35,12 +35,6 @@ public class TempusPersistenceMain {
             tParser.importTempusFile(manager,tempFileList);
             tParser.outParseResults(tempOtherFileList);
 
-
-
-
-
-
-
         }catch (Exception e){
             e.getMessage();
             e.printStackTrace();
