@@ -361,18 +361,6 @@ public class TempusParser {
             throw new Exception("JSON schema version is incompatible with parser ");
         }
 
-        if(tf.getResults().getInheritedRelevantVariants() != null){
-            for(InheritedVariant relevantVariant:tf.getResults().getInheritedRelevantVariants()){
-                relevantVariant.setVariantCategory("InheritedRelevantVariant");
-            }
-        }
-        if(tf.getResults().getInheritedVariantsOfUnknownSignificance() != null){
-            for(InheritedVariant unknownVariant : tf.getResults().getInheritedVariantsOfUnknownSignificance()){
-                unknownVariant.setVariantCategory("InheritedVariantsOfUnknownSignificance");
-            }
-        }
-
-
         return tf;
     }
     public  void importTempusFile(EntityManager manager, List<TempusFile> tfList){

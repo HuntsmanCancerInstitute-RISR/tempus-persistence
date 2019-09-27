@@ -117,6 +117,7 @@ public class Patient {
     }
 
     @JsonIgnore
+    @Column(name="BSTShadowID")
     public String getIdBSTShadow() { return idBSTShadow; }
     public void setIdBSTShadow(String idBSTShadow) {
         this.idBSTShadow = idBSTShadow;

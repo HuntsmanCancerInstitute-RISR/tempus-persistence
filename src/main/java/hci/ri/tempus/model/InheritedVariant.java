@@ -8,6 +8,8 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "TpsInheritedVariant")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name="variantCategory", discriminatorType = DiscriminatorType.STRING)
 public class InheritedVariant {
 
     private long idInheritedVariant;
@@ -29,7 +31,6 @@ public class InheritedVariant {
     private String ref;
     private String alt;
     private String pos;
-    private String variantCategory;
     private Result result;
 
     public InheritedVariant(){
@@ -100,9 +101,6 @@ public class InheritedVariant {
 
     public String getPos() { return pos; }
     public void setPos(String pos) { this.pos = pos; }
-
-    public String getVariantCategory() { return variantCategory; }
-    public void setVariantCategory(String variantCategory) { this.variantCategory = variantCategory; }
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

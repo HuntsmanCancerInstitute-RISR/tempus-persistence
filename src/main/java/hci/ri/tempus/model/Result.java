@@ -19,8 +19,9 @@ public class Result {
     private Set<SPActionableCPVariant> somaticPotentiallyActionableCopyNumberVariants;
     private Set<SPBioRelevantVariant> somaticBiologicallyRelevantVariants;
     private Set<SVUknownSignificance> somaticVariantsOfUnknownSignificance;
-    private Set<InheritedVariant> inheritedRelevantVariants;
-    private Set<InheritedVariant> inheritedVariantsOfUnknownSignificance;
+    private Set<InheritedRelevantVariant> inheritedRelevantVariants;
+    private Set<InheritedUnknownSignificanceVariant> inheritedVariantsOfUnknownSignificance;
+    private Set<InheritedIncidentalFinding> inheritedIncidentalFindings;
     private Set<LowCoverageAmplicon> lowCoverageAmplicons;
     private Set<FusionVariant> fusionVariants;
     private Set<IhcFinding> ihcFindings;
@@ -91,10 +92,9 @@ public class Result {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonAlias({"inheritedRelevantVariants","inheritedIncidentalFindings"})
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
-    public Set<InheritedVariant> getInheritedRelevantVariants() { return inheritedRelevantVariants; }
-    public void setInheritedRelevantVariants(Set<InheritedVariant> inheritedRelevantVariants) {
+    public Set<InheritedRelevantVariant> getInheritedRelevantVariants() { return inheritedRelevantVariants; }
+    public void setInheritedRelevantVariants(Set<InheritedRelevantVariant> inheritedRelevantVariants) {
         this.inheritedRelevantVariants = inheritedRelevantVariants;
         if(this.inheritedRelevantVariants != null){
             for(InheritedVariant rVariant : this.inheritedRelevantVariants){
@@ -106,8 +106,10 @@ public class Result {
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
-    public Set<InheritedVariant> getInheritedVariantsOfUnknownSignificance() { return inheritedVariantsOfUnknownSignificance; }
-    public void setInheritedVariantsOfUnknownSignificance(Set<InheritedVariant> inheritedVariantsOfUnknownSignificance) {
+    public Set<InheritedUnknownSignificanceVariant> getInheritedVariantsOfUnknownSignificance() {
+        return inheritedVariantsOfUnknownSignificance;
+    }
+    public void setInheritedVariantsOfUnknownSignificance(Set<InheritedUnknownSignificanceVariant> inheritedVariantsOfUnknownSignificance) {
         this.inheritedVariantsOfUnknownSignificance = inheritedVariantsOfUnknownSignificance;
         if(this.inheritedVariantsOfUnknownSignificance != null){
             for(InheritedVariant uVariant : this.inheritedVariantsOfUnknownSignificance){
@@ -115,6 +117,22 @@ public class Result {
             }
         }
     }
+
+    @JsonProperty
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
+    public Set<InheritedIncidentalFinding> getInheritedIncidentalFindings() {
+        return inheritedIncidentalFindings;
+    }
+    public void setInheritedIncidentalFindings(Set<InheritedIncidentalFinding> inheritedIncidentalFindings) {
+        this.inheritedIncidentalFindings = inheritedIncidentalFindings;
+        if(this.inheritedIncidentalFindings != null){
+            for(InheritedVariant iFindings : this.inheritedIncidentalFindings){
+                iFindings.setResult(this);
+            }
+        }
+    }
+
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
