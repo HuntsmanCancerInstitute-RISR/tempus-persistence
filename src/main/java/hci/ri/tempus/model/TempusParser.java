@@ -93,6 +93,30 @@ public class TempusParser {
         return propMap;
     }
 
+    private void addFlaggedSample(Map<String,List<TempusSample>> tempusJsonFileMap,String sampleKey, String sampleName,
+                                   TempusSample preBuiltSample){
+        List<TempusSample> samples = tempusJsonFileMap.get(sampleKey);
+
+        if(samples == null){ // needs to be added to the map
+            samples = new ArrayList<TempusSample>();
+            if(preBuiltSample != null){
+                samples.add(preBuiltSample);
+            }else{
+                samples.add(new TempusSample(sampleName));
+            }
+            tempusJsonFileMap.put(sampleKey, samples);
+
+        }else{
+            if(preBuiltSample != null){
+                samples.add(preBuiltSample);
+            }else{
+                samples.add(new TempusSample(sampleName));
+            }
+
+        }
+
+    }
+
     public void parseTempusFileList(List<TempusFile> tempusFileList, Map<String,List<TempusSample>> tempusOtherFileList, EntityManager manager){
         StringBuilder jsonPathPlusFile = new StringBuilder();
         List<String> linkableJsonList = new ArrayList<>();
@@ -137,27 +161,23 @@ public class TempusParser {
                     String[] chunks =  fileName.split("_");
                     String fileTestType = "";
 
+                    String nucType = chunks[0].substring(chunks[0].length() - nucLen + 1);
                     String excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
                     List<TempusSample> samples  = tempusOtherFileList.get(excludeNucFilename);
                     String sampleName = String.join("_", Arrays.copyOfRange(chunks, 0, chunks.length - 1) );
                     TempusSample rnaSample = new TempusSample();
 
 
-                    if(samples == null){
-                        System.out.println("WARNING: " + line + " does not have a json file associated with it or is not linkable to json");
-                        continue;
-                    }
-
-
+                    // match file name with meta data sample category(tumor, normal)
                     for(String fileChunk : chunks ){
-                        if(fileChunk.equals("N")){
+                        if(nucType.equals("DNA") && fileChunk.equals("N")){
                             fileTestType = "normal";
                             break;
-                        }else if(fileChunk.equals("T")){
+                        }else if(nucType.equals("DNA") && fileChunk.equals("T")){
                             fileTestType = "tumor";
                             break;
-                        }else if(fileChunk.equals("RSQ1")){
-                            fileTestType = "RSQ1";
+                        }else if(nucType.equals("RNA") && (fileChunk.equals("RSQ1") || fileChunk.equals("RS")) ){
+                            fileTestType = "RS";
                             foundRNA = true; // don't know if tempus provides rna seq sample meta data
                             rnaSample.setSampleName(sampleName);
                             rnaSample.setTestType("tumor");
@@ -169,27 +189,31 @@ public class TempusParser {
                         }
                     }
                     // if sample metadata exists but not the file then the sampleName never gets set and gets flagged
-                    for(TempusSample sample : samples ){
-                        String testType = sample.getTestType().toLowerCase();
-                        if(testType.equals(fileTestType) && testType.equals("tumor")){
-                            foundTumor = true;
-                            sample.setSampleName(sampleName);
-                            break;
-                        }
-                        if(testType.equals(fileTestType) && testType.equals("normal")){
-                            foundNormal = true;
-                            sample.setSampleName(sampleName);
-                            break;
+                    if(samples != null){
+                        for(TempusSample sample : samples ){
+                            String testType = sample.getTestType().toLowerCase();
+                            if(testType.equals(fileTestType) && testType.equals("tumor")){
+                                foundTumor = true;
+                                sample.setSampleName(sampleName);
+                                break;
+                            }
+                            if(testType.equals(fileTestType) && testType.equals("normal")){
+                                foundNormal = true;
+                                sample.setSampleName(sampleName);
+                                break;
+                            }
                         }
                     }
 
+                    // need to pair filetype to filename since the code below is only ran once all files for that given file id
                     sampleNameMap.put(fileTestType,sampleName);
 
-
-
-                    if(isNewPatientFile(sc, chunks)){
+                    if(isNewPatientFile(sc, chunks,excludeNucFilename)){
                         if(foundRNA){
-                            samples.add(rnaSample);
+                            String sName = sampleNameMap.get("RS");
+                            if(sName != null){
+                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
+                            }
                         }
 
                         if(!foundNormal){
@@ -198,7 +222,8 @@ public class TempusParser {
                             if(sName != null){
                                 // this is the case where there is a file but no sample metadata for it
                                 // this is how we get it flagged in the next step because its missing idPerson
-                                samples.add(new TempusSample(sName));
+                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+
                             }
 
                         }
@@ -208,7 +233,7 @@ public class TempusParser {
                             if(sName != null){
                                 // this is the case where there is a file but no sample metadata for it
                                 // this is how we get it flagged in the next step because its missing idPerson
-                                samples.add(new TempusSample(sName));
+                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
                             }
                         }
                         foundRNA = false;
@@ -224,6 +249,8 @@ public class TempusParser {
 
             }
 
+            verifyHasDataWithMeta(tempusOtherFileList);
+
 
         }catch(Exception e){
             e.printStackTrace();
@@ -238,21 +265,35 @@ public class TempusParser {
 
         }
     }
+    // make sure json has fastq data with it. If not flagged it by the name of the json
+    private void verifyHasDataWithMeta(Map<String, List<TempusSample>> metaFileList) {
+        for(Map.Entry<String,List<TempusSample>> entry : metaFileList.entrySet()){
+            String key = entry.getKey();
+            ArrayList<TempusSample> samples = (ArrayList<TempusSample>)entry.getValue();
+            for(TempusSample tSample : samples){
+                if(tSample.getSampleName().startsWith("result")){ // if json naming convention  changes you will need to update this
+                    // flagging because no tempus data was found
+                    tSample.setPersonId(null);
+                }
+            }
+        }
+    }
 
-    public boolean isNewPatientFile(PeekableScanner sc,String[] chunks){
+    public boolean isNewPatientFile(PeekableScanner sc,String[] chunks,String excludeNucFileName){
         boolean isNewPatientFile = false;
         String nextLine = sc.peek();
         if(nextLine != null){
             String[] pathChunks = getFileChunks(nextLine,"/");// "\\"+File.separator);
             String nextFile = pathChunks[ pathChunks.length - 1];
             String[] nextChunks = nextFile.split("_");
+            String nextExcludeNucFileName = nextChunks[0].substring(0, chunks[0].length() - nucLen);
             String[] fileExtChunks = nextChunks[nextChunks.length - 1].split("\\.");
             String nextLastExt = fileExtChunks[fileExtChunks.length - 1];
             // fastq.gz not fastq.gz.md5
             if(!nextLastExt.equals("gz")){
                 isNewPatientFile = true;
             }
-            if(!chunks[0].equals(nextChunks[0])){
+            if(!excludeNucFileName.equals(nextExcludeNucFileName)){
                 isNewPatientFile = true;
             }
         }else{
@@ -320,18 +361,6 @@ public class TempusParser {
             throw new Exception("JSON schema version is incompatible with parser ");
         }
 
-        if(tf.getResults().getInheritedRelevantVariants() != null){
-            for(InheritedVariant relevantVariant:tf.getResults().getInheritedRelevantVariants()){
-                relevantVariant.setVariantCategory("InheritedRelevantVariant");
-            }
-        }
-        if(tf.getResults().getInheritedVariantsOfUnknownSignificance() != null){
-            for(InheritedVariant unknownVariant : tf.getResults().getInheritedVariantsOfUnknownSignificance()){
-                unknownVariant.setVariantCategory("InheritedVariantsOfUnknownSignificance");
-            }
-        }
-
-
         return tf;
     }
     public  void importTempusFile(EntityManager manager, List<TempusFile> tfList){
@@ -392,8 +421,9 @@ public class TempusParser {
     }
 
     public void findLinkableJsons(EntityManager manager,  String jsonFileName, Map<String,List<TempusSample>> otherFileMap, TempusFile tempusFile ){
-
+        // getting just the id that is shared between the fastq file and the json id
         String jsonID = jsonFileName.substring(SAMPLE_ID_START,SAMPLE_ID_END).toUpperCase();
+        String jsonNameOnly = jsonFileName.split("\\.")[0];
 
 
         manager.getTransaction().begin();
@@ -426,7 +456,7 @@ public class TempusParser {
                 s.setGender(noEmptyStrDelimiter(sex));
                 s.setShadowId(noEmptyStrDelimiter(shadowId));
                 s.setTestType(noEmptyStrDelimiter(sampleCategory));
-                s.setSampleName(noEmptyStrDelimiter(null)); // unknown right now
+                s.setSampleName(noEmptyStrDelimiter(jsonNameOnly)); // unknown right now
                 s.setTissueType(noEmptyStrDelimiter(sampleSite));
                 s.setSampleSubType(sampleType);
                 s.setSubmittedDiagnosis(diagnosis);
@@ -442,18 +472,9 @@ public class TempusParser {
 
             }
 
-            //p.getFullName()
-
 
         }
 
-
-//        List<TempusFile> studs =  manager.createQuery("Select tf from TempusFile tf JOIN r").getResultList();
-//        for(Specimen speci  : studs.get(0).getSpecimens()){
-//            speci.setNotes("I am the new notes ");
-//            manager.persist(speci);
-//            break;
-//        }
 
         manager.getTransaction().commit();
     }
