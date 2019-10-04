@@ -17,7 +17,7 @@ public class ReportDeserializer extends JsonDeserializer<Report> {
             JsonNode node = oc.readTree(jp);
             final Long idReport = new Long(0);
             final String reportId = TempusParser.getJsonStringValue(new String[]{"reportId"}, node);
-            final String signout_date = TempusParser.getJsonStringValue(new String[]{"signout_date"}, node);
+            final String signout_date = TempusParser.getJsonStringValue(new String[]{"signoutDate"}, node);
             final String bioInfPipeline = TempusParser.getJsonStringValue(new String[]{"bioInfPipeline"}, node);
             final String notes = TempusParser.getJsonStringValue(new String[]{"notes"}, node);
             final String reportStatus = TempusParser.getJsonStringValue(new String[]{"workflow","reportStatus"}, node);

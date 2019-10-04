@@ -64,25 +64,36 @@ public class SPBioRelevantVariant {
 
     public String getGene5() { return gene5;}
     public void setGene5(String gene5) { this.gene5 = gene5; }
-
+    @JsonProperty("gene5Display")
+    @Column(name="gene5display")
     public String getGene5display() { return gene5display; }
     public void setGene5display(String gene5display) { this.gene5display = gene5display; }
 
+    @JsonProperty("gene5HgncId")
+    @Column(name="gene5hgncId")
     public String getGene5hgncId() { return gene5hgncId; }
     public void setGene5hgncId(String gene5hgncId) { this.gene5hgncId = gene5hgncId; }
 
+    @JsonProperty("gene5EntrezId")
+    @Column(name="gene5entrezId")
     public String getGene5entrezId() { return gene5entrezId; }
     public void setGene5entrezId(String gene5entrezId) { this.gene5entrezId = gene5entrezId; }
 
     public String getGene3() { return gene3; }
     public void setGene3(String gene3) { this.gene3 = gene3; }
 
+    @JsonProperty("gene3Display")
+    @Column(name="gene3display")
     public String getGene3display() { return gene3display; }
     public void setGene3display(String gene3display) { this.gene3display = gene3display; }
 
+    @JsonProperty("gene3HgncId")
+    @Column(name="gene3hgncId")
     public String getGene3hgncId() { return gene3hgncId; }
     public void setGene3hgncId(String gene3hgncId) { this.gene3hgncId = gene3hgncId; }
 
+    @JsonProperty("gene3EntrezId")
+    @Column(name="gene3entrezId")
     public String getGene3entrezId() { return gene3entrezId; }
     public void setGene3entrezId(String gene3entrezId) { this.gene3entrezId = gene3entrezId; }
 

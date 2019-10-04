@@ -21,7 +21,7 @@ public class TempusParser {
     private String tempusJsonFileList;
     private String deidentFile;
     private String outFileName;
-    private static final String SCHEMA_VER_ACCEPTED = "1.3";
+    private static final String SCHEMA_VER_ACCEPTED = "1.3.1";
     private static final Integer SAMPLE_ID_START= 7;
     private static final Integer SAMPLE_ID_END = 13;
     private Map<String,Specimen> specimenMap;
@@ -65,6 +65,7 @@ public class TempusParser {
         module.addDeserializer(Variant.class, new VariantDeserializer());
         module.addDeserializer(SPActionableCPVariant.class, new CopyNumberVariantDeserializer());
         module.addDeserializer(Object.class, new IhcFindingDeserializer());
+        module.addDeserializer(MetaData.class, new MetaDataDeserializer());
         objectMapper.registerModule(module);
 
 
@@ -311,7 +312,7 @@ public class TempusParser {
         String[] fileChunks = name.split("\\.");
         if(fileChunks.length == 2 && fileChunks[1].equals("json")){
             String nameNoExt = fileChunks[0];
-            tFile.getPatient().setDoB("xxx");
+            tFile.getPatient().setDateOfBirth("xxx");
             tFile.getPatient().setFirstName("xxx");
             tFile.getPatient().setLastName("xxx");
             tFile.getPatient().setTempusId("xxx");
@@ -397,7 +398,7 @@ public class TempusParser {
             }
 
         }
-        if(tempNode.isNull() || tempNode.equals("null")){
+        if(tempNode == null || tempNode.isNull() || tempNode.equals("null")){
             return null;
         }
 
@@ -438,7 +439,7 @@ public class TempusParser {
             String diagnosis = tempusFile.getPatient().getDiagnosis();
             String fullName = tempusFile.getPatient().getFirstName() + " " + tempusFile.getPatient().getLastName();
             String sex = tempusFile.getPatient().getSex();
-            String emr = tempusFile.getPatient().getEmr_id();
+            String emr = tempusFile.getPatient().getEmrId();
             String shadowId = tempusFile.getPatient().getIdBSTShadow();
             String accessionNumber = tempusFile.getOrder().getAccessionId();
 

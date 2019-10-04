@@ -19,9 +19,9 @@ public class Result {
     private Set<SPActionableCPVariant> somaticPotentiallyActionableCopyNumberVariants;
     private Set<SPBioRelevantVariant> somaticBiologicallyRelevantVariants;
     private Set<SVUknownSignificance> somaticVariantsOfUnknownSignificance;
-    private Set<InheritedRelevantVariant> inheritedRelevantVariants;
-    private Set<InheritedUnknownSignificanceVariant> inheritedVariantsOfUnknownSignificance;
-    private Set<InheritedIncidentalFinding> inheritedIncidentalFindings;
+    private InheritedRelevantVariant inheritedRelevantVariants;
+    private InheritedUnknownSignificanceVariant inheritedVariantsOfUnknownSignificance;
+    private InheritedIncidentalFinding inheritedIncidentalFindings;
     private Set<LowCoverageAmplicon> lowCoverageAmplicons;
     private Set<FusionVariant> fusionVariants;
     private Set<IhcFinding> ihcFindings;
@@ -92,47 +92,34 @@ public class Result {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
-    public Set<InheritedRelevantVariant> getInheritedRelevantVariants() { return inheritedRelevantVariants; }
-    public void setInheritedRelevantVariants(Set<InheritedRelevantVariant> inheritedRelevantVariants) {
+    @JsonManagedReference("result_inheritedVariant")
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
+    public InheritedRelevantVariant getInheritedRelevantVariants() { return inheritedRelevantVariants; }
+    public void setInheritedRelevantVariants(InheritedRelevantVariant inheritedRelevantVariants) {
         this.inheritedRelevantVariants = inheritedRelevantVariants;
-        if(this.inheritedRelevantVariants != null){
-            for(InheritedVariant rVariant : this.inheritedRelevantVariants){
-                rVariant.setResult(this);
-            }
-        }
     }
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
-    public Set<InheritedUnknownSignificanceVariant> getInheritedVariantsOfUnknownSignificance() {
+    @JsonManagedReference("result_inheritedVariant")
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
+    public InheritedUnknownSignificanceVariant getInheritedVariantsOfUnknownSignificance() {
         return inheritedVariantsOfUnknownSignificance;
     }
-    public void setInheritedVariantsOfUnknownSignificance(Set<InheritedUnknownSignificanceVariant> inheritedVariantsOfUnknownSignificance) {
+    public void setInheritedVariantsOfUnknownSignificance(InheritedUnknownSignificanceVariant inheritedVariantsOfUnknownSignificance) {
         this.inheritedVariantsOfUnknownSignificance = inheritedVariantsOfUnknownSignificance;
-        if(this.inheritedVariantsOfUnknownSignificance != null){
-            for(InheritedVariant uVariant : this.inheritedVariantsOfUnknownSignificance){
-                uVariant.setResult(this);
-            }
-        }
     }
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
-    public Set<InheritedIncidentalFinding> getInheritedIncidentalFindings() {
+    @JsonManagedReference("result_inheritedVariant")
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true, mappedBy = "result")
+    public InheritedIncidentalFinding getInheritedIncidentalFindings() {
         return inheritedIncidentalFindings;
     }
-    public void setInheritedIncidentalFindings(Set<InheritedIncidentalFinding> inheritedIncidentalFindings) {
+    public void setInheritedIncidentalFindings(InheritedIncidentalFinding inheritedIncidentalFindings) {
         this.inheritedIncidentalFindings = inheritedIncidentalFindings;
-        if(this.inheritedIncidentalFindings != null){
-            for(InheritedVariant iFindings : this.inheritedIncidentalFindings){
-                iFindings.setResult(this);
-            }
-        }
     }
-
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
