@@ -69,6 +69,8 @@ public class Patient {
         this.tempusId = tempusId;
     }
 
+    //breaking convention with camel case for this version :( tempus
+    @JsonProperty(value = "emrId")
     @Column(name="emrId")
     public String getEmrId() {
         return emrId;
