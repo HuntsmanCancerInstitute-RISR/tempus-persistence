@@ -112,6 +112,7 @@ public class Patient {
     }
 
     @JsonIgnore
+    @Column(name="HCIPersonID")
     public Integer getIdPerson() { return idPerson; }
     public void setIdPerson(Integer idPerson) {
         this.idPerson = idPerson;
