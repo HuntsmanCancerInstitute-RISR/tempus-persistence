@@ -132,6 +132,9 @@ public class TempusParser {
 
             while(sc.hasNext()){
                 String line = sc.next();
+                if(line.contains("json")){
+                    System.out.println("JSON being parsed: " + line);
+                }
                 String[] fileChunks = getFileChunks(line,"/");//File.separator);
                 String path = "";
                 String fileName = fileChunks[fileChunks.length - 1];
