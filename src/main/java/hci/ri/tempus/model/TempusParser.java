@@ -13,6 +13,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class TempusParser {
 
@@ -94,7 +95,7 @@ public class TempusParser {
     }
 
     private void addFlaggedSample(Map<String,List<TempusSample>> tempusJsonFileMap,String sampleKey, String sampleName,
-                                   TempusSample preBuiltSample){
+                                  TempusSample preBuiltSample){
         List<TempusSample> samples = tempusJsonFileMap.get(sampleKey);
 
         if(samples == null){ // needs to be added to the map
@@ -125,17 +126,13 @@ public class TempusParser {
         try{
             sc = new PeekableScanner(new File( tempusJsonFileList));
 
-            boolean foundRNA = false; // RNA seq
-            boolean foundTumor = false;
-            boolean foundNormal = false;
-            Map<String,String> sampleNameMap = new HashMap<String,String>();
-
             while(sc.hasNext()){
                 String line = sc.next();
                 if(line.contains("json")){
                     System.out.println("JSON being parsed: " + line);
                 }
-                String[] fileChunks = getFileChunks(line,"/");//File.separator);
+                String pattern = Pattern.quote(System.getProperty("file.separator"));
+                String[] fileChunks = getFileChunks(line,pattern);//File.separator);
                 String path = "";
                 String fileName = fileChunks[fileChunks.length - 1];
                 String[] fileTypeChunks = getFileChunks(fileName, "\\.");
@@ -160,97 +157,14 @@ public class TempusParser {
 
                 }else if(fileType.equals("md5") || fileType.equals("pdf")){
                     //todo not sure if I need to keep track of these
-                }else {
-                    String[] chunks =  fileName.split("_");
-                    String fileTestType = "";
-
-                    String nucType = chunks[0].substring(chunks[0].length() - nucLen + 1);
-                    String excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
-                    List<TempusSample> samples  = tempusOtherFileList.get(excludeNucFilename);
-                    String sampleName = String.join("_", Arrays.copyOfRange(chunks, 0, chunks.length - 1) );
-                    TempusSample rnaSample = new TempusSample();
-
-
-                    // match file name with meta data sample category(tumor, normal)
-                    for(String fileChunk : chunks ){
-                        if(nucType.equals("DNA") && fileChunk.equals("N")){
-                            fileTestType = "normal";
-                            break;
-                        }else if(nucType.equals("DNA") && fileChunk.equals("T")){
-                            fileTestType = "tumor";
-                            break;
-                        }else if(nucType.equals("RNA") && (fileChunk.equals("RSQ1") || fileChunk.equals("RS")) ){
-                            fileTestType = "RS";
-                            foundRNA = true; // don't know if tempus provides rna seq sample meta data
-                            rnaSample.setSampleName(sampleName);
-                            rnaSample.setTestType("tumor");
-                            rnaSample.setPersonId(samples.get(0).getPersonId()); // should always be atleast one entry in array for its key
-                            rnaSample.setMrn(samples.get(0).getMrn());
-                            rnaSample.setGender(samples.get(0).getGender());
-                            rnaSample.setFullName(samples.get(0).getFullName());
-                            break;
-                        }
-                    }
-                    // if sample metadata exists but not the file then the sampleName never gets set and gets flagged
-                    if(samples != null){
-                        for(TempusSample sample : samples ){
-                            String testType = sample.getTestType().toLowerCase();
-                            if(testType.equals(fileTestType) && testType.equals("tumor")){
-                                foundTumor = true;
-                                sample.setSampleName(sampleName);
-                                break;
-                            }
-                            if(testType.equals(fileTestType) && testType.equals("normal")){
-                                foundNormal = true;
-                                sample.setSampleName(sampleName);
-                                break;
-                            }
-                        }
-                    }
-
-                    // need to pair filetype to filename since the code below is only ran once all files for that given file id
-                    sampleNameMap.put(fileTestType,sampleName);
-
-                    if(isNewPatientFile(sc, chunks,excludeNucFilename)){
-                        if(foundRNA){
-                            String sName = sampleNameMap.get("RS");
-                            if(sName != null){
-                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
-                            }
-                        }
-
-                        if(!foundNormal){
-                            System.out.println("WARNING: didn't find the metadata for normal of sample " + chunks[0] );
-                            String sName = sampleNameMap.get("normal");
-                            if(sName != null){
-                                // this is the case where there is a file but no sample metadata for it
-                                // this is how we get it flagged in the next step because its missing idPerson
-                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
-
-                            }
-
-                        }
-                        if(!foundTumor){
-                            System.out.println("WARNING: didn't find the metadata for tumor of sample " + chunks[0]);
-                            String sName = sampleNameMap.get("tumor");
-                            if(sName != null){
-                                // this is the case where there is a file but no sample metadata for it
-                                // this is how we get it flagged in the next step because its missing idPerson
-                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
-                            }
-                        }
-                        foundRNA = false;
-                        foundTumor = false;
-                        foundNormal = false;
-                        sampleNameMap.clear();
-                    }
-
-                    //tempusOtherFileList.put(,jsonPathPlusFile.toString());
                 }
                 jsonPathPlusFile.setLength(0);
 
-
             }
+
+
+            sc = new PeekableScanner(new File( tempusJsonFileList));
+            this.associateMetaDataWithFastqData(tempusOtherFileList, sc);
 
             verifyHasDataWithMeta(tempusOtherFileList);
 
@@ -268,6 +182,119 @@ public class TempusParser {
 
         }
     }
+
+
+    private void associateMetaDataWithFastqData(Map<String, List<TempusSample>> tempusOtherFileList, PeekableScanner sc){
+
+        boolean foundRNA = false; // RNA seq
+        boolean foundTumor = false;
+        boolean foundNormal = false;
+        Map<String,String> sampleNameMap = new HashMap<String,String>();
+
+        while(sc.hasNext()){
+
+            String line = sc.next();
+
+
+            String pattern = Pattern.quote(System.getProperty("file.separator"));
+            String[] fileChunks = getFileChunks(line,pattern);//File.separator);
+            String fileName = fileChunks[fileChunks.length - 1];
+            if( !fileName.endsWith("fastq.gz")){
+                continue;
+            }
+
+
+            String[] chunks =  fileName.split("_");
+            String fileTestType = "";
+
+            String nucType = chunks[0].substring(chunks[0].length() - nucLen + 1);
+            String excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
+            List<TempusSample> samples  = tempusOtherFileList.get(excludeNucFilename);
+            String sampleName = String.join("_", Arrays.copyOfRange(chunks, 0, chunks.length - 1) );
+            TempusSample rnaSample = new TempusSample();
+
+
+            // match file name with meta data sample category(tumor, normal)
+            for(String fileChunk : chunks ){
+                if(nucType.equals("DNA") && fileChunk.equals("N")){
+                    fileTestType = "normal";
+                    break;
+                }else if(nucType.equals("DNA") && fileChunk.equals("T")){
+                    fileTestType = "tumor";
+                    break;
+                }else if(nucType.equals("RNA") && (fileChunk.equals("RSQ1") || fileChunk.equals("RS")) ){
+                    fileTestType = "RS";
+                    foundRNA = true; // don't know if tempus provides rna seq sample meta data
+                    rnaSample.setSampleName(sampleName);
+                    rnaSample.setTestType("tumor");
+                    rnaSample.setPersonId(samples.get(0).getPersonId()); // should always be atleast one entry in array for its key
+                    rnaSample.setMrn(samples.get(0).getMrn());
+                    rnaSample.setGender(samples.get(0).getGender());
+                    rnaSample.setFullName(samples.get(0).getFullName());
+                    break;
+                }
+            }
+            // if sample metadata exists but not the file then the sampleName never gets set and gets flagged
+            if(samples != null){
+                for(TempusSample sample : samples ){
+                    String testType = sample.getTestType().toLowerCase();
+                    if(testType.equals(fileTestType) && testType.equals("tumor")){
+                        foundTumor = true;
+                        sample.setSampleName(sampleName);
+                        break;
+                    }
+                    if(testType.equals(fileTestType) && testType.equals("normal")){
+                        foundNormal = true;
+                        sample.setSampleName(sampleName);
+                        break;
+                    }
+                }
+            }
+
+            // need to pair filetype to filename since the code below is only ran once all files for that given file id
+            sampleNameMap.put(fileTestType,sampleName);
+
+            if(isNewPatientFile(sc, chunks,excludeNucFilename)){
+                if(foundRNA){
+                    String sName = sampleNameMap.get("RS");
+                    if(sName != null){
+                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
+                    }
+                }
+
+                if(!foundNormal){
+                    System.out.println("WARNING: didn't find the metadata for normal of sample " + chunks[0] );
+                    String sName = sampleNameMap.get("normal");
+                    if(sName != null){
+                        // this is the case where there is a file but no sample metadata for it
+                        // this is how we get it flagged in the next step because its missing idPerson
+                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+
+                    }
+
+                }
+                if(!foundTumor){
+                    System.out.println("WARNING: didn't find the metadata for tumor of sample " + chunks[0]);
+                    String sName = sampleNameMap.get("tumor");
+                    if(sName != null){
+                        // this is the case where there is a file but no sample metadata for it
+                        // this is how we get it flagged in the next step because its missing idPerson
+                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+                    }
+                }
+                foundRNA = false;
+                foundTumor = false;
+                foundNormal = false;
+                sampleNameMap.clear();
+            }
+
+            //tempusOtherFileList.put(,jsonPathPlusFile.toString());
+        }
+
+    }
+
+
+
     // make sure json has fastq data with it. If not flagged it by the name of the json
     private void verifyHasDataWithMeta(Map<String, List<TempusSample>> metaFileList) {
         for(Map.Entry<String,List<TempusSample>> entry : metaFileList.entrySet()){
@@ -286,17 +313,16 @@ public class TempusParser {
         boolean isNewPatientFile = false;
         String nextLine = sc.peek();
         if(nextLine != null){
-            String[] pathChunks = getFileChunks(nextLine,"/");// "\\"+File.separator);
+            String pattern = Pattern.quote(System.getProperty("file.separator"));
+            String[] pathChunks = getFileChunks(nextLine,pattern);// "\\"+File.separator);
             String nextFile = pathChunks[ pathChunks.length - 1];
             String[] nextChunks = nextFile.split("_");
             String nextExcludeNucFileName = nextChunks[0].substring(0, chunks[0].length() - nucLen);
-            String[] fileExtChunks = nextChunks[nextChunks.length - 1].split("\\.");
-            String nextLastExt = fileExtChunks[fileExtChunks.length - 1];
+
+
             // fastq.gz not fastq.gz.md5
-            if(!nextLastExt.equals("gz")){
-                isNewPatientFile = true;
-            }
-            if(!excludeNucFileName.equals(nextExcludeNucFileName)){
+            // todo if fastq is not the only file type in the future you might need to improve strategy
+            if(!nextExcludeNucFileName.endsWith("fastq.gz") ||  !excludeNucFileName.equals(nextExcludeNucFileName)){
                 isNewPatientFile = true;
             }
         }else{
@@ -351,6 +377,7 @@ public class TempusParser {
     } */
 
     private String[] getFileChunks(String file, String splitStr){
+
         String[] fileChunks = file.split(splitStr);
         return fileChunks;
     }
