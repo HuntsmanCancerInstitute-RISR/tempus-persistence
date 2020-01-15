@@ -96,7 +96,7 @@ public class TempusParser {
     }
 
     private void addFlaggedSample(Map<String,List<TempusSample>> tempusJsonFileMap,String sampleKey, String sampleName,
-                                  TempusSample preBuiltSample){
+                                   TempusSample preBuiltSample){
         List<TempusSample> samples = tempusJsonFileMap.get(sampleKey);
 
         if(samples == null){ // needs to be added to the map
@@ -130,7 +130,7 @@ public class TempusParser {
             while(sc.hasNext()){
                 String line = sc.next();
                 if(line.contains("json")){
-                    System.out.println("processing JSON: " + line);
+                    System.out.println("JSON being parsed: " + line);
                 }
                 String pattern = Pattern.quote(System.getProperty("file.separator"));
                 String[] fileChunks = getFileChunks(line,pattern);//File.separator);
@@ -204,6 +204,7 @@ public class TempusParser {
                 continue;
             }
 
+
             String[] chunks =  fileName.split("_");
             String fileTestType = "";
 
@@ -251,26 +252,26 @@ public class TempusParser {
                 }
             }
 
-            // need to pair filetype to filename since the code below is only ran once all files for that given file id
-            sampleNameMap.put(fileTestType,sampleName);
+                    // need to pair filetype to filename since the code below is only ran once all files for that given file id
+                    sampleNameMap.put(fileTestType,sampleName);
 
-            if(isNewPatientFile(sc, chunks,excludeNucFilename)){
-                if(foundRNA){
-                    String sName = sampleNameMap.get("RS");
-                    if(sName != null){
-                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
-                    }
-                }
+                    if(isNewPatientFile(sc, chunks,excludeNucFilename)){
+                        if(foundRNA){
+                            String sName = sampleNameMap.get("RS");
+                            if(sName != null){
+                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
+                            }
+                        }
 
-                if(!foundNormal){
-                    System.out.println("WARNING: didn't find the metadata for normal of sample " + chunks[0] );
-                    String sName = sampleNameMap.get("normal");
-                    if(sName != null){
-                        // this is the case where there is a file but no sample metadata for it
-                        // this is how we get it flagged in the next step because its missing idPerson
-                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+                        if(!foundNormal){
+                            System.out.println("WARNING: didn't find the metadata for normal of sample " + chunks[0] );
+                            String sName = sampleNameMap.get("normal");
+                            if(sName != null){
+                                // this is the case where there is a file but no sample metadata for it
+                                // this is how we get it flagged in the next step because its missing idPerson
+                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
 
-                    }
+                            }
 
                 }
                 if(!foundTumor){
@@ -322,7 +323,7 @@ public class TempusParser {
 
             // fastq.gz not fastq.gz.md5
             // todo if fastq is not the only file type in the future you might need to improve strategy
-            if(!nextExcludeNucFileName.endsWith("fastq.gz") ||  !excludeNucFileName.equals(nextExcludeNucFileName)){
+            if(!nextFile.endsWith("fastq.gz") ||  !excludeNucFileName.equals(nextExcludeNucFileName)){
                 isNewPatientFile = true;
             }
         }else{
@@ -456,20 +457,31 @@ public class TempusParser {
 
 
         manager.getTransaction().begin();
+
         List tempusFileEntry = manager.createQuery("Select p.idPerson  " +
                 "from TempusFile tf " +
                 "JOIN tf.order o " +
                 "JOIN tf.patient p where o.accessionId LIKE :jsonID ")
                 .setParameter("jsonID", "%" + jsonID + "%")
                 .getResultList();
-        String idPerson = tempusFileEntry.size() > 0 ? ""+ tempusFileEntry.get(0) : null;
-        if(idPerson != null){
+        // unsure why but this brings back one row that is null if it can't find jsonID being queried
+        String hciPersonID = tempusFileEntry.size() > 0 ? tempusFileEntry.get(0) != null ? ""+ tempusFileEntry.get(0)  : null : null;
+        if(hciPersonID == null ){
+            tempusFileEntry = manager.createQuery("SELECT p.HCIPersonID FROM TempusLinkedPatient p " +
+                    "WHERE p.accessionId LIKE :jsonID")
+                    .setParameter("jsonID", "%" + jsonID + "%")
+                    .getResultList();
+            hciPersonID = tempusFileEntry.size() > 0 ? ""+ tempusFileEntry.get(0) : null;
+        }
+
+        if(hciPersonID != null){
             String diagnosis = tempusFile.getPatient().getDiagnosis();
             String fullName = tempusFile.getPatient().getFirstName() + " " + tempusFile.getPatient().getLastName();
             String sex = tempusFile.getPatient().getSex();
             String emr = tempusFile.getPatient().getEmrId();
             String shadowId = tempusFile.getPatient().getIdBSTShadow();
             String accessionNumber = tempusFile.getOrder().getAccessionId();
+            System.out.println("This is the emr value: " + emr + " for accession number: " + accessionNumber );
 
             Set<Specimen> specimens = tempusFile.getSpecimens();
             for(Specimen speci : specimens ){
@@ -480,7 +492,7 @@ public class TempusParser {
                 String sampleType = speci.getSampleType();
 
                 s.setMrn(noEmptyStrDelimiter(emr));
-                s.setPersonId(noEmptyStrDelimiter(idPerson));
+                s.setPersonId(noEmptyStrDelimiter(hciPersonID));
                 s.setFullName(noEmptyStrDelimiter(fullName));
                 s.setGender(noEmptyStrDelimiter(sex));
                 s.setShadowId(noEmptyStrDelimiter(shadowId));
