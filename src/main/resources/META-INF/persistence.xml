@@ -24,6 +24,7 @@
         <class>hci.ri.tempus.model.InheritedIncidentalFinding</class>
         <class>hci.ri.tempus.model.InheritedRelevantVariant</class>
         <class>hci.ri.tempus.model.InheritedUnknownSignificanceVariant</class>
+        <class>hci.ri.tempus.model.TempusLinkedPatient</class>
         <properties>
             <!-- The JDBC driver of your database -->
             <property name = "hibernate.show_sql" value = "true" />
