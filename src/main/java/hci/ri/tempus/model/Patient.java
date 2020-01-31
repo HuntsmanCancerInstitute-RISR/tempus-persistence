@@ -69,11 +69,13 @@ public class Patient {
         this.tempusId = tempusId;
     }
 
+    //breaking convention with camel case for this version :( tempus
+    @JsonProperty(value = "emr_id")
     @Column(name="emrId")
-    public String getEmr_id() {
+    public String getEmrId() {
         return emrId;
     }
-    public void setEmr_id(String emrId) {
+    public void setEmrId(String emrId) {
         this.emrId = emrId;
     }
 
@@ -85,12 +87,12 @@ public class Patient {
         this.sex = sex;
     }
 
-    @JsonProperty("DoB")
+    @JsonProperty(value = "DoB")
     @Column(name="dateOfBirth")
-    public String getDoB() {
+    public String getDateOfBirth() {
         return dateOfBirth;
     }
-    public void setDoB(String dateOfBirth) {
+    public void setDateOfBirth(String dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 
@@ -152,7 +154,7 @@ public class Patient {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getIdPatient(), getFirstName(), getLastName(), getTempusId(), getEmr_id(), getSex(),
-                getDoB(), getDiagnosis(), getDiagnosisDate());
+        return Objects.hash(getIdPatient(), getFirstName(), getLastName(), getTempusId(), getEmrId(), getSex(),
+                getDateOfBirth(), getDiagnosis(), getDiagnosisDate());
     }
 }

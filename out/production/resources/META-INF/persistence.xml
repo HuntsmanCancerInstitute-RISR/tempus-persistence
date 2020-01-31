@@ -21,6 +21,10 @@
         <class>hci.ri.tempus.model.InheritedVariant</class>
         <class>hci.ri.tempus.model.LowCoverageAmplicon</class>
         <class>hci.ri.tempus.model.FusionVariant</class>
+        <class>hci.ri.tempus.model.InheritedIncidentalFinding</class>
+        <class>hci.ri.tempus.model.InheritedRelevantVariant</class>
+        <class>hci.ri.tempus.model.InheritedUnknownSignificanceVariant</class>
+        <class>hci.ri.tempus.model.InheritedVariantValue</class>
         <properties>
             <!-- The JDBC driver of your database -->
             <property name = "hibernate.show_sql" value = "true" />
