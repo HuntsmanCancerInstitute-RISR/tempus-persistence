@@ -70,7 +70,7 @@ public class Patient {
     }
 
     //breaking convention with camel case for this version :( tempus
-    @JsonProperty(value = "emrId")
+    @JsonProperty(value = "emr_id")
     @Column(name="emrId")
     public String getEmrId() {
         return emrId;
@@ -87,6 +87,7 @@ public class Patient {
         this.sex = sex;
     }
 
+    @JsonProperty(value = "DoB")
     @Column(name="dateOfBirth")
     public String getDateOfBirth() {
         return dateOfBirth;

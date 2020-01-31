@@ -45,12 +45,12 @@ public class FusionVariant {
     public String getGene5Display() { return gene5Display; }
     public void setGene5Display(String gene5display) { this.gene5Display = gene5display; }
 
-    @JsonProperty("gene5HgncId")
+    @JsonProperty("gene5hgncId")
     @Column(name="gene5hgncId")
     public String getGene5HgncId() { return gene5hgncId; }
     public void setGene5HgncId(String gene5hgncId) { this.gene5hgncId = gene5hgncId; }
 
-    @JsonProperty("gene5EntrezId")
+    @JsonProperty("gene5entrezId")
     @Column(name="gene5entrezId")
     public String getGene5entrezId() { return gene5entrezId; }
     public void setGene5entrezId(String gene5entrezId) { this.gene5entrezId = gene5entrezId; }
@@ -61,12 +61,12 @@ public class FusionVariant {
     public String getGene3Display() { return gene3display; }
     public void setGene3Display(String gene3display) { this.gene3display = gene3display; }
 
-    @JsonProperty("gene3HgncId")
+    @JsonProperty("gene3hgncId")
     @Column(name="gene3hgncId")
     public String getGene3hgncId() { return gene3hgncId; }
     public void setGene3hgncId(String gene3hgncId) { this.gene3hgncId = gene3hgncId; }
 
-    @JsonProperty("gene3EntrezId")
+    @JsonProperty("gene3entrezId")
     @Column(name="gene3entrezId")
     public String getGene3entrezId() { return gene3entrezId; }
     public void setGene3entrezId(String gene3entrezId) { this.gene3entrezId = gene3entrezId; }
