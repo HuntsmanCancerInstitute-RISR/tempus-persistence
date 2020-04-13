@@ -390,6 +390,20 @@ public class TempusParser {
         if(!tf.getMetadata().getSchemaVersion().equals(SCHEMA_VER_ACCEPTED)){
             throw new Exception("JSON schema version is incompatible with parser ");
         }
+        //todo need to make the parser support updating a patient
+//        EntityTransaction transaction= manager.getTransaction();
+//        transaction.begin();
+//
+//        TempusFile tf1 = manager.find(TempusFile.class,new Long(1));
+//        tf.setIdTempusFile(tf1.getIdTempusFile());
+//        tf.getOrder().setIdOrder(tf1.getOrder().getIdOrder());
+//        tf.getReport().setIdReport(tf1.getReport().getIdReport());
+//        tf.getPatient().setIdPatient(tf1.getPatient().getIdPatient());
+//
+//        manager.merge(tf);
+//
+//        transaction.commit();
+
 
         return tf;
     }
