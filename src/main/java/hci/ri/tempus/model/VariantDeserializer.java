@@ -26,6 +26,7 @@ public class VariantDeserializer extends JsonDeserializer<Variant> {
         final String variantDescription = TempusParser.getJsonStringValue(new String[]{"variantDescription"},node);
         final Integer coverage = TempusParser.getJsonIntegerValue(new String[]{"coverage"},node);
 
+
         Variant variant = new Variant();
         variant.setIdVariant(idVariant);
         variant.setMutationEffect(mutationEffect);
