@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import hci.ri.tempus.util.PeekableScanner;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
+import javax.persistence.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -325,10 +324,12 @@ public class TempusParser {
                 if(tSample.getSampleName().startsWith("result")){ // if json naming convention  changes you will need to update this
                     // flagging because no tempus data was found
                     if(!tSample.getPersonId().equals("-1")){
-                        System.out.println("WARNING: didn't find the associated potential all fastq files for this json: " + tSample.getSampleName());
-                        logList.add("WARNING: didn't find the associated potential all fastq files for this json: " + tSample.getSampleName());
+                        System.out.println("WARNING: didn't find potentially all fastq files for this json: " + tSample.getSampleName());
+                        logList.add("WARNING: didn't find potentially all fastq files for this json: " + tSample.getSampleName());
                         tSample.setPersonId(null);
                     }else{
+                        System.out.println("WARNING: this sample doesn't have a hci person id: " + tSample.getSampleName());
+                        logList.add("WARNING: this sample doesn't have a hci person id: " + tSample.getSampleName());
                         tSample.setPersonId(null);
                     }
 
@@ -428,6 +429,7 @@ public class TempusParser {
             //throw new Exception("JSON schema version is incompatible with parser ");
         }
         //todo need to make the parser support updating a patient
+        //todo can't figure a way to do this because json doesn't provide unique ids for every entity therefore you it may mess up an update
 //        EntityTransaction transaction= manager.getTransaction();
 //        transaction.begin();
 //
@@ -437,7 +439,7 @@ public class TempusParser {
 //        tf.getReport().setIdReport(tf1.getReport().getIdReport());
 //        tf.getPatient().setIdPatient(tf1.getPatient().getIdPatient());
 //
-//        manager.merge(tf);
+        //manager.merge(tf);
 //
 //        transaction.commit();
 
@@ -537,6 +539,10 @@ public class TempusParser {
             System.out.println("This is the hci person id value: " +  hciPersonID + " for accession number: " + accessionNumber );
 
             Set<Specimen> specimens = tempusFile.getSpecimens();
+            String cpTestName = tempusFile.getOrder().getTest().getName();
+            String cpDesign = tempusFile.getOrder().getTest().getCode();
+            String cpDescription = tempusFile.getOrder().getTest().getDescription();
+
             for(Specimen speci : specimens ){
                 TempusSample s = new TempusSample();
 
@@ -552,8 +558,11 @@ public class TempusParser {
                 s.setTestType(noEmptyStrDelimiter(sampleCategory));
                 s.setSampleName(noEmptyStrDelimiter(jsonNameOnly)); // unknown right now
                 s.setTissueType(noEmptyStrDelimiter(sampleSite));
-                s.setSampleSubType(sampleType);
-                s.setSubmittedDiagnosis(diagnosis);
+                s.setSampleSubType(noEmptyStrDelimiter(sampleType));
+                s.setSubmittedDiagnosis(noEmptyStrDelimiter(diagnosis));
+                s.setCaptureTestName(noEmptyStrDelimiter(cpTestName));
+                s.setCaptureDesign(noEmptyStrDelimiter(cpDesign));
+                s.setCaptureDescription(noEmptyStrDelimiter(cpDescription));
 
                 if(!otherFileMap.containsKey(accessionNumber)){
                     List<TempusSample> samples = new ArrayList<>();
