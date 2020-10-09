@@ -1,6 +1,7 @@
 package hci.ri.tempus.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -42,6 +43,7 @@ public class LowCoverageAmplicon {
     public String getEntrezId() { return entrezId; }
     public void setEntrezId(String entrezId) { this.entrezId = entrezId; }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getCoverage() { return coverage; }
     public void setCoverage(Integer coverage) { this.coverage = coverage; }
 

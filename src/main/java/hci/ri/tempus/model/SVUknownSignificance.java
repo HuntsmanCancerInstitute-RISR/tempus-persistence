@@ -1,6 +1,7 @@
 package hci.ri.tempus.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
@@ -80,6 +81,7 @@ public class SVUknownSignificance {
     public String getAllelicFraction() { return allelicFraction; }
     public void setAllelicFraction(String allelicFraction) { this.allelicFraction = allelicFraction; }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getCoverage() { return coverage; }
     public void setCoverage(Integer coverage) { this.coverage = coverage; }
 

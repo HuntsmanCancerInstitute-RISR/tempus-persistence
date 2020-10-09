@@ -71,7 +71,9 @@ public class Variant {
     public String getVariantDescription() { return variantDescription; }
     public void setVariantDescription(String variantDescription) { this.variantDescription = variantDescription; }
 
+
     @Column(name="coverage")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getCoverage() { return coverage; }
     public void setCoverage(Integer coverage) { this.coverage = coverage; }
 

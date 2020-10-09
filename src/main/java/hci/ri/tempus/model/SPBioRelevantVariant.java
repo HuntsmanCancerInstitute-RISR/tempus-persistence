@@ -134,9 +134,11 @@ public class SPBioRelevantVariant {
     public String getAllelicFraction() { return allelicFraction; }
     public void setAllelicFraction(String allelicFraction) { this.allelicFraction = allelicFraction; }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getCoverage() { return coverage; }
     public void setCoverage(Integer coverage) { this.coverage = coverage; }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getCopyNumber() { return copyNumber; }
     public void setCopyNumber(Integer copyNumber) { this.copyNumber = copyNumber; }
 

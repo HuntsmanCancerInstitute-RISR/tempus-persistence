@@ -4,6 +4,7 @@ import java.util.Objects;
 
 public class TempusSample{
 
+
     private String mrn;
     private String personId;
     private String fullName;
@@ -14,6 +15,12 @@ public class TempusSample{
     private String testType;
     private String tissueType;
     private String submittedDiagnosis;
+    private String captureTestName;
+    private String captureDesign;
+    private String captureDescription;
+
+
+
     TempusSample(){
         this.mrn = "null";
         this.personId = "null";
@@ -25,6 +32,9 @@ public class TempusSample{
         this.testType = "null";
         this.tissueType = "null";
         this.submittedDiagnosis = "null";
+        this.captureTestName = "null";
+        this.captureDesign = "null";
+        this.captureDescription = "null";
     }
     TempusSample(String sampleName){
         this.mrn = "null";
@@ -37,6 +47,9 @@ public class TempusSample{
         this.testType = "null";
         this.tissueType = "null";
         this.submittedDiagnosis = "null";
+        this.captureTestName = "null";
+        this.captureDesign = "null";
+        this.captureDescription = "null";
     }
 
 
@@ -118,6 +131,28 @@ public class TempusSample{
     public String getSubmittedDiagnosis() {
         return submittedDiagnosis;
     }
+    public String getCaptureTestName() {
+        return captureTestName;
+    }
+
+    public void setCaptureTestName(String captureTestName) {
+        this.captureTestName = captureTestName;
+    }
+
+    public String getCaptureDesign() {
+        return captureDesign;
+    }
+
+    public void setCaptureDesign(String captureDesign) {
+        this.captureDesign = captureDesign;
+    }
+    public String getCaptureDescription() {
+        return captureDescription;
+    }
+
+    public void setCaptureDescription(String captureTestDescription) {
+        this.captureDescription = captureTestDescription;
+    }
 
     @Override
     public String toString(){
@@ -141,6 +176,12 @@ public class TempusSample{
         strBuild.append(tissueType);
         strBuild.append("\t");
         strBuild.append( submittedDiagnosis);
+        strBuild.append("\t");
+        strBuild.append(captureTestName);
+        strBuild.append("\t");
+        strBuild.append(captureDesign);
+        strBuild.append("\t");
+        strBuild.append(captureDescription);
         return strBuild.toString();
     }
 

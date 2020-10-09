@@ -7,8 +7,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import hci.ri.tempus.util.PeekableScanner;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
+import javax.persistence.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -17,6 +16,7 @@ import java.util.regex.Pattern;
 
 public class TempusParser {
 
+    private String logFile;
     private String tempusCredFile;
     private String downloadPath;
     private String tempusJsonFileList;
@@ -28,10 +28,11 @@ public class TempusParser {
     private Map<String,Specimen> specimenMap;
     private static final Integer nucLen = 4; // ex -RNA
     private ObjectMapper objectMapper;
+    private List<String> logList;
 
 
     public TempusParser(String[] args){
-
+        logList = new ArrayList<>();
         for(int i = 0; i < args.length; i++){
             args[i] = args[i].toLowerCase();
             if(args[i].equals("-cred")){
@@ -44,7 +45,9 @@ public class TempusParser {
                 deidentFile = args[++i];
             }else if(args[i].equals("-out")){
                 outFileName = args[++i];
-            }else if(args[i].equals("-help")){
+            }else if(args[i].equals("-log")) {
+                logFile = args[++i];
+            } else if(args[i].equals("-help")){
                 help();
                 System.exit(0);
             }
@@ -96,10 +99,10 @@ public class TempusParser {
     }
 
     private void addFlaggedSample(Map<String,List<TempusSample>> tempusJsonFileMap,String sampleKey, String sampleName,
-                                   TempusSample preBuiltSample){
+                                  TempusSample preBuiltSample){
         List<TempusSample> samples = tempusJsonFileMap.get(sampleKey);
 
-        if(samples == null){ // needs to be added to the map
+        if(samples == null){ // needs to be added to the map capture flagged item
             samples = new ArrayList<TempusSample>();
             if(preBuiltSample != null){
                 samples.add(preBuiltSample);
@@ -196,7 +199,7 @@ public class TempusParser {
 
             String line = sc.next();
 
-
+            //all fastq/md5s files will be in DNA OR RNA folder
             String pattern = Pattern.quote(System.getProperty("file.separator"));
             String[] fileChunks = getFileChunks(line,pattern);//File.separator);
             String fileName = fileChunks[fileChunks.length - 1];
@@ -206,34 +209,46 @@ public class TempusParser {
 
 
             String[] chunks =  fileName.split("_");
+            List<String> chunkList = new ArrayList<String>(Arrays.asList(chunks));
             String fileTestType = "";
+            //look here!
+            String nucType =  fileChunks[0];// chunks[0].substring(chunks[0].length() - nucLen + 1);
+            int nucIdx = chunks[0].indexOf(nucType);
+            String excludeNucFilename = chunks[0];
+            if(nucIdx > 0 ){
+                // if DNA or RNA found we assume it is at the end since previous script follows that standard
+                excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
+            }
 
-            String nucType = chunks[0].substring(chunks[0].length() - nucLen + 1);
-            String excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
+
             List<TempusSample> samples  = tempusOtherFileList.get(excludeNucFilename);
             String sampleName = String.join("_", Arrays.copyOfRange(chunks, 0, chunks.length - 1) );
             TempusSample rnaSample = new TempusSample();
 
 
-            // match file name with meta data sample category(tumor, normal)
-            for(String fileChunk : chunks ){
-                if(nucType.equals("DNA") && fileChunk.equals("N")){
-                    fileTestType = "normal";
-                    break;
-                }else if(nucType.equals("DNA") && fileChunk.equals("T")){
-                    fileTestType = "tumor";
-                    break;
-                }else if(nucType.equals("RNA") && (fileChunk.equals("RSQ1") || fileChunk.equals("RS")) ){
-                    fileTestType = "RS";
-                    foundRNA = true; // don't know if tempus provides rna seq sample meta data
-                    rnaSample.setSampleName(sampleName);
-                    rnaSample.setTestType("tumor");
+            // match file name with tissue type sample category(tumor, normal)
+
+            if((nucType.equals("DNA") || nucType.equals("DSQ1"))  && chunkList.contains("N")){
+                fileTestType = "normal";
+
+            }else if((nucType.equals("DNA") || nucType.equals("DSQ1")) && chunkList.contains("T")){
+                fileTestType = "tumor";
+            }else if(nucType.equals("RNA") || (chunkList.contains("RSQ1") || chunkList.contains("RS")) ){
+                fileTestType = "RS";
+                foundRNA = true; // don't know if tempus provides rna seq sample meta data
+                rnaSample.setSampleName(sampleName);
+                rnaSample.setTestType("tumor");
+                if(samples != null && samples.size() > 0 ){
                     rnaSample.setPersonId(samples.get(0).getPersonId()); // should always be atleast one entry in array for its key
                     rnaSample.setMrn(samples.get(0).getMrn());
                     rnaSample.setGender(samples.get(0).getGender());
                     rnaSample.setFullName(samples.get(0).getFullName());
-                    break;
                 }
+
+            }else{
+                System.out.println("Error: Couldn't associate fastq filename with kind of tissue type " + fileName);
+                logList.add("Error: Naming convention change, Couldn't associate fastq filename with kind of tissue type. " + fileName);
+                System.exit(1);
             }
             // if sample metadata exists but not the file then the sampleName never gets set and gets flagged
             if(samples != null){
@@ -252,31 +267,35 @@ public class TempusParser {
                 }
             }
 
-                    // need to pair filetype to filename since the code below is only ran once all files for that given file id
-                    sampleNameMap.put(fileTestType,sampleName);
+            // need to pair filetype to filename since the code below is only ran once all files for that given file id
+            sampleNameMap.put(fileTestType,sampleName);
 
-                    if(isNewPatientFile(sc, chunks,excludeNucFilename)){
-                        if(foundRNA){
-                            String sName = sampleNameMap.get("RS");
-                            if(sName != null){
-                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
-                            }
-                        }
+            if(isNewPatientFile(sc, chunks,excludeNucFilename)){
+                if(foundRNA){
+                    String sName = sampleNameMap.get("RS");
+                    if(sName != null){ // this doesn't mean its flagged if it has all criteria
+                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,rnaSample);
+                    }
+                }
 
-                        if(!foundNormal){
-                            System.out.println("WARNING: didn't find the metadata for normal of sample " + chunks[0] );
-                            String sName = sampleNameMap.get("normal");
-                            if(sName != null){
-                                // this is the case where there is a file but no sample metadata for it
-                                // this is how we get it flagged in the next step because its missing idPerson
-                                addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+                if(!foundNormal){
+                    String sName = sampleNameMap.get("normal");
+                    String displayName = sName != null ? sName : excludeNucFilename;
+                    System.out.println("WARNING: didn't find the metadata for normal of sample " + displayName );
+                    logList.add("WARNING: didn't find the metadata for normal of sample " + displayName);
 
-                            }
+                    if(sName != null){
+                        // this is the case where there is a file but no sample metadata for it
+                        // this is how we get it flagged in the next step because its missing idPerson
+                        addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+                    }
 
                 }
                 if(!foundTumor){
-                    System.out.println("WARNING: didn't find the metadata for tumor of sample " + chunks[0]);
                     String sName = sampleNameMap.get("tumor");
+                    String displayName = sName != null ? sName : excludeNucFilename;
+                    System.out.println("WARNING: didn't find the metadata for tumor of sample " + displayName);
+                    logList.add("WARNING: didn't find the metadata for tumor of sample " + displayName);
                     if(sName != null){
                         // this is the case where there is a file but no sample metadata for it
                         // this is how we get it flagged in the next step because its missing idPerson
@@ -304,7 +323,16 @@ public class TempusParser {
             for(TempusSample tSample : samples){
                 if(tSample.getSampleName().startsWith("result")){ // if json naming convention  changes you will need to update this
                     // flagging because no tempus data was found
-                    tSample.setPersonId(null);
+                    if(!tSample.getPersonId().equals("-1")){
+                        System.out.println("WARNING: didn't find potentially all fastq files for this json: " + tSample.getSampleName());
+                        logList.add("WARNING: didn't find potentially all fastq files for this json: " + tSample.getSampleName());
+                        tSample.setPersonId(null);
+                    }else{
+                        System.out.println("WARNING: this sample doesn't have a hci person id: " + tSample.getSampleName());
+                        logList.add("WARNING: this sample doesn't have a hci person id: " + tSample.getSampleName());
+                        tSample.setPersonId(null);
+                    }
+
                 }
             }
         }
@@ -318,7 +346,12 @@ public class TempusParser {
             String[] pathChunks = getFileChunks(nextLine,pattern);// "\\"+File.separator);
             String nextFile = pathChunks[ pathChunks.length - 1];
             String[] nextChunks = nextFile.split("_");
-            String nextExcludeNucFileName = nextChunks[0].substring(0, chunks[0].length() - nucLen);
+
+            int nucIdx = nextChunks[0].indexOf(pathChunks[0]);
+            String nextExcludeNucFileName = nextChunks[0];
+            if(nucIdx > 0 ) {
+                nextExcludeNucFileName = nextChunks[0].substring(0, chunks[0].length() - nucLen);
+            }
 
 
             // fastq.gz not fastq.gz.md5
@@ -388,9 +421,15 @@ public class TempusParser {
         byte[] jsonData = Files.readAllBytes(Paths.get(tempusJson));
         TempusFile tf = objectMapper.readValue(jsonData, TempusFile.class);
         if(!tf.getMetadata().getSchemaVersion().equals(SCHEMA_VER_ACCEPTED)){
-            throw new Exception("JSON schema version is incompatible with parser ");
+            System.out.println("JSON schema version " + tf.getMetadata().getSchemaVersion()
+                    + " is incompatible with parser accepting " + SCHEMA_VER_ACCEPTED + " for " + tf.getOrder().getAccessionId());
+            logList.add("WARNING: JSON schema version " +
+                    tf.getMetadata().getSchemaVersion() + " is incompatible with parser accepting " + SCHEMA_VER_ACCEPTED + " for " + tf.getOrder().getAccessionId()  );
+
+            //throw new Exception("JSON schema version is incompatible with parser ");
         }
         //todo need to make the parser support updating a patient
+        //todo can't figure a way to do this because json doesn't provide unique ids for every entity therefore you it may mess up an update
 //        EntityTransaction transaction= manager.getTransaction();
 //        transaction.begin();
 //
@@ -400,7 +439,7 @@ public class TempusParser {
 //        tf.getReport().setIdReport(tf1.getReport().getIdReport());
 //        tf.getPatient().setIdPatient(tf1.getPatient().getIdPatient());
 //
-//        manager.merge(tf);
+        //manager.merge(tf);
 //
 //        transaction.commit();
 
@@ -419,6 +458,7 @@ public class TempusParser {
                     transaction.commit();
                 }else {
                     System.out.println("This json has already been imported for " + tf.getOrder().getAccessionId()+ "... Skipping");
+                    logList.add("This json has already been imported for " + tf.getOrder().getAccessionId()+ "... Skipping");
                 }
             }
 
@@ -458,7 +498,7 @@ public class TempusParser {
             }
 
         }
-        if(tempNode.isNull() || tempNode.equals("null")){
+        if(tempNode == null || tempNode.isNull() || tempNode.equals("null")){
             return null;
         }
         return tempNode.asInt();
@@ -496,8 +536,13 @@ public class TempusParser {
             String shadowId = tempusFile.getPatient().getIdBSTShadow();
             String accessionNumber = tempusFile.getOrder().getAccessionId();
             System.out.println("This is the emr value: " + emr + " for accession number: " + accessionNumber );
+            System.out.println("This is the hci person id value: " +  hciPersonID + " for accession number: " + accessionNumber );
 
             Set<Specimen> specimens = tempusFile.getSpecimens();
+            String cpTestName = tempusFile.getOrder().getTest().getName();
+            String cpDesign = tempusFile.getOrder().getTest().getCode();
+            String cpDescription = tempusFile.getOrder().getTest().getDescription();
+
             for(Specimen speci : specimens ){
                 TempusSample s = new TempusSample();
 
@@ -513,8 +558,11 @@ public class TempusParser {
                 s.setTestType(noEmptyStrDelimiter(sampleCategory));
                 s.setSampleName(noEmptyStrDelimiter(jsonNameOnly)); // unknown right now
                 s.setTissueType(noEmptyStrDelimiter(sampleSite));
-                s.setSampleSubType(sampleType);
-                s.setSubmittedDiagnosis(diagnosis);
+                s.setSampleSubType(noEmptyStrDelimiter(sampleType));
+                s.setSubmittedDiagnosis(noEmptyStrDelimiter(diagnosis));
+                s.setCaptureTestName(noEmptyStrDelimiter(cpTestName));
+                s.setCaptureDesign(noEmptyStrDelimiter(cpDesign));
+                s.setCaptureDescription(noEmptyStrDelimiter(cpDescription));
 
                 if(!otherFileMap.containsKey(accessionNumber)){
                     List<TempusSample> samples = new ArrayList<>();
@@ -527,8 +575,18 @@ public class TempusParser {
 
             }
 
+        }else{
+            System.out.println("Warning: No hci person id can be found for this these files "
+                    + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName);
+            logList.add("Warning: No hci person id can be found for this these files "
+                    + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName);
 
+            TempusSample s = new TempusSample();
+            s.setSampleName(jsonNameOnly);
+            s.setPersonId("-1"); // a marker to show that hci person id is missing not being explicitly set to null for flagging purposes
+            otherFileMap.put(jsonNameOnly,new ArrayList<TempusSample>(Arrays.asList(s)));
         }
+
 
 
         manager.getTransaction().commit();
@@ -570,6 +628,21 @@ public class TempusParser {
             }catch (FileNotFoundException e){
                 e.printStackTrace();
                 throw e;
+            }
+        }
+    }
+
+    public void saveLogFile() throws FileNotFoundException {
+        if(logFile != null ){
+            try(PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(logFile,true)))){
+                for(String log : logList){
+                    writer.println(log);
+                }
+            }catch (FileNotFoundException e){
+                e.printStackTrace();
+                throw e;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
