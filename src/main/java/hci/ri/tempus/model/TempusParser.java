@@ -1,14 +1,14 @@
 package hci.ri.tempus.model;
 
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import hci.ri.tempus.util.PeekableScanner;
 
 import javax.persistence.*;
 import java.io.*;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -64,11 +64,23 @@ public class TempusParser {
 
         objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
+        // this is so we get the default serializer which is needed for backreference/ managed reference support
+        module.setDeserializerModifier(new BeanDeserializerModifier() {
+            @Override
+            public JsonDeserializer<?> modifyDeserializer(DeserializationConfig config, BeanDescription beanDesc, JsonDeserializer<?> deserializer) {
+                if (beanDesc.getBeanClass() == HrdFinding.class) {
+                    return new HrdFindingDeserializer(deserializer);
+                } else if(beanDesc.getBeanClass() == IhcFinding.class) {
+                    return new IhcFindingDeserializer(deserializer);
+                } else {
+                    return deserializer;
+                }
+            }
+        });
         module.addDeserializer(Report.class, new ReportDeserializer());
         module.addDeserializer(Specimen.class, new SpecimenDeserializer());
         module.addDeserializer(Variant.class, new VariantDeserializer());
         module.addDeserializer(SPActionableCPVariant.class, new CopyNumberVariantDeserializer());
-        module.addDeserializer(Object.class, new IhcFindingDeserializer());
         module.addDeserializer(MetaData.class, new MetaDataDeserializer());
         objectMapper.registerModule(module);
 
@@ -155,7 +167,7 @@ public class TempusParser {
 
 
                 if(fileType.equals("json")){
-                    TempusFile tFile = parseTempusFile(jsonPathPlusFile.toString());
+                    TempusFile tFile = parseTempusFile(jsonPathPlusFile.toString(), manager, fileName);
                     findLinkableJsons(manager, fileName, tempusOtherFileList, tFile );
                     tempusFileList.add(tFile);
 
@@ -281,25 +293,32 @@ public class TempusParser {
                 if(!foundNormal){
                     String sName = sampleNameMap.get("normal");
                     String displayName = sName != null ? sName : excludeNucFilename;
-                    System.out.println("WARNING: didn't find the metadata for normal of sample " + displayName );
-                    logList.add("WARNING: didn't find the metadata for normal of sample " + displayName);
 
                     if(sName != null){
                         // this is the case where there is a file but no sample metadata for it
                         // this is how we get it flagged in the next step because its missing idPerson
+                        System.out.println("WARNING: didn't find the metadata for normal of sample " + displayName );
+                        logList.add("WARNING: didn't find the metadata for normal of sample " + displayName);
                         addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+                    }else {
+                        System.out.println("WARNING: didn't find the fastq file for normal of sample " + displayName );
+                        logList.add("WARNING: didn't find fastq file for  normal of sample " + displayName);
                     }
 
                 }
                 if(!foundTumor){
                     String sName = sampleNameMap.get("tumor");
                     String displayName = sName != null ? sName : excludeNucFilename;
-                    System.out.println("WARNING: didn't find the metadata for tumor of sample " + displayName);
-                    logList.add("WARNING: didn't find the metadata for tumor of sample " + displayName);
+
                     if(sName != null){
                         // this is the case where there is a file but no sample metadata for it
                         // this is how we get it flagged in the next step because its missing idPerson
+                        System.out.println("WARNING: didn't find the metadata for tumor of sample " + displayName);
+                        logList.add("WARNING: didn't find the metadata for tumor of sample " + displayName);
                         addFlaggedSample(tempusOtherFileList,excludeNucFilename, sName,null);
+                    }else {
+                        System.out.println("WARNING: didn't find the fastq file for tumor of sample " + displayName );
+                        logList.add("WARNING: didn't find fastq file for  tumor of sample " + displayName);
                     }
                 }
                 foundRNA = false;
@@ -416,8 +435,8 @@ public class TempusParser {
     }
 
 
-    public TempusFile parseTempusFile(String tempusJson) throws Exception{
-
+    public TempusFile parseTempusFile(String tempusJson, EntityManager manager, String jsonFileName) throws Exception{
+        String jsonID = jsonFileName.substring(SAMPLE_ID_START,SAMPLE_ID_END).toUpperCase();
         byte[] jsonData = Files.readAllBytes(Paths.get(tempusJson));
         TempusFile tf = objectMapper.readValue(jsonData, TempusFile.class);
         if(!tf.getMetadata().getSchemaVersion().equals(SCHEMA_VER_ACCEPTED)){
@@ -429,19 +448,29 @@ public class TempusParser {
             //throw new Exception("JSON schema version is incompatible with parser ");
         }
         //todo need to make the parser support updating a patient
-        //todo can't figure a way to do this because json doesn't provide unique ids for every entity therefore you it may mess up an update
-//        EntityTransaction transaction= manager.getTransaction();
-//        transaction.begin();
-//
-//        TempusFile tf1 = manager.find(TempusFile.class,new Long(1));
-//        tf.setIdTempusFile(tf1.getIdTempusFile());
+        //todo can't figure a way to do this because json doesn't provide unique ids for every entity therefore it may mess up an update
+
+        List tempusFileEntry = manager.createQuery("SELECT tf.idTempusFile FROM TempusFile tf JOIN tf.order as o " +
+                "WHERE o.accessionId LIKE :jsonID")
+                .setParameter("jsonID", "%" + jsonID + "%")
+                .getResultList();
+        Long idTempusFile = tempusFileEntry.size() > 0 ? (Long) tempusFileEntry.get(0) : null;
+//        if(idTempusFile != null){
+//            EntityTransaction transaction= manager.getTransaction();
+//            transaction.begin();
+//            TempusFile tf1 = manager.find(TempusFile.class,idTempusFile);
+//            tf1.getSpecimens().forEach((Specimen sp) -> {
+//                sp.setNotes("I am updating you notes");
+//            });
 //        tf.getOrder().setIdOrder(tf1.getOrder().getIdOrder());
 //        tf.getReport().setIdReport(tf1.getReport().getIdReport());
 //        tf.getPatient().setIdPatient(tf1.getPatient().getIdPatient());
 //
-        //manager.merge(tf);
 //
-//        transaction.commit();
+//            manager.merge(tf);
+//            transaction.commit();
+
+        //}
 
 
         return tf;
@@ -503,6 +532,21 @@ public class TempusParser {
         }
         return tempNode.asInt();
     }
+    public static Double getJsonDoubleValue(String[] jsonNames, JsonNode node){
+        JsonNode tempNode = node;
+        for(int i = 0; i < jsonNames.length; i++){
+            if(tempNode != null){
+                tempNode = tempNode.get(jsonNames[i]);
+            }else {
+                return null;
+            }
+
+        }
+        if(tempNode == null || tempNode.isNull() || tempNode.equals("null")){
+            return null;
+        }
+        return tempNode.asDouble();
+    }
 
     public void findLinkableJsons(EntityManager manager,  String jsonFileName, Map<String,List<TempusSample>> otherFileMap, TempusFile tempusFile ){
         // getting just the id that is shared between the fastq file and the json id
@@ -560,9 +604,12 @@ public class TempusParser {
                 s.setTissueType(noEmptyStrDelimiter(sampleSite));
                 s.setSampleSubType(noEmptyStrDelimiter(sampleType));
                 s.setSubmittedDiagnosis(noEmptyStrDelimiter(diagnosis));
+                //duplicate info, will allow because tumor/normal aren't consistently present
                 s.setCaptureTestName(noEmptyStrDelimiter(cpTestName));
                 s.setCaptureDesign(noEmptyStrDelimiter(cpDesign));
                 s.setCaptureDescription(noEmptyStrDelimiter(cpDescription));
+
+
 
                 if(!otherFileMap.containsKey(accessionNumber)){
                     List<TempusSample> samples = new ArrayList<>();
@@ -572,14 +619,13 @@ public class TempusParser {
                     otherFileMap.get(accessionNumber).add(s);
 
                 }
-
             }
 
         }else{
             System.out.println("Warning: No hci person id can be found for this these files "
-                    + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName);
+                    + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName + ". The emr id is: " + tempusFile.getPatient().getEmrId() );
             logList.add("Warning: No hci person id can be found for this these files "
-                    + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName);
+                    + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName + ". The emr id is: " + tempusFile.getPatient().getEmrId() );
 
             TempusSample s = new TempusSample();
             s.setSampleName(jsonNameOnly);
@@ -609,7 +655,7 @@ public class TempusParser {
         List order =  manager.createQuery(isUniqueTempusFile)
                 .setParameter("accessionId", tf.getOrder().getAccessionId())
                 .getResultList();
-        if(order.size() > 0 ){
+        if(order.size() > 0){
             return false;
         }else{
             return true;

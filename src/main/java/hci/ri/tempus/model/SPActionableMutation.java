@@ -1,6 +1,7 @@
 package hci.ri.tempus.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -12,6 +13,7 @@ public class SPActionableMutation {
 
     private long idSPActionableMutations;
     private String gene;
+    private String geneDescription;
     private String display;
     private String hgncId;
     private String entrezId;
@@ -32,6 +34,11 @@ public class SPActionableMutation {
     @Column(name="gene")
     public String getGene() { return gene; }
     public void setGene(String gene) { this.gene = gene; }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Column(name="geneDescription")
+    public String getGeneDescription() { return geneDescription; }
+    public void setGeneDescription(String geneDescription) {  this.geneDescription = geneDescription; }
 
     @Column(name="display")
     public String getDisplay() { return display; }
