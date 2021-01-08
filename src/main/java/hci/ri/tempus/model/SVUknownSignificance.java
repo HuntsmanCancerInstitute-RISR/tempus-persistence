@@ -12,6 +12,7 @@ import java.util.Objects;
 public class SVUknownSignificance {
     private long idSVUknownSignificance;
     private String gene;
+    private String geneDescription;
     private String display;
     private String hgncId;
     private String entrezId;
@@ -41,6 +42,11 @@ public class SVUknownSignificance {
 
     public String getGene() { return gene; }
     public void setGene(String gene) { this.gene = gene; }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Column(name="geneDescription")
+    public String getGeneDescription() { return geneDescription; }
+    public void setGeneDescription(String geneDescription) {  this.geneDescription = geneDescription; }
 
     public String getDisplay() { return display; }
     public void setDisplay(String display) { this.display = display; }

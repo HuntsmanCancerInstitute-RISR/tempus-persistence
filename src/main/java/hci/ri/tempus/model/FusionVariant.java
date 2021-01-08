@@ -2,6 +2,7 @@ package hci.ri.tempus.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.persistence.*;
@@ -24,6 +25,7 @@ public class FusionVariant {
     private String gene3hgncId;
     private String gene3entrezId;
     private String variantDescription;
+    private String geneDescription;
     private String fusionType;
     private String structuralVariant;
     private Set therapies;
@@ -70,6 +72,10 @@ public class FusionVariant {
     @Column(name="gene3entrezId")
     public String getGene3entrezId() { return gene3entrezId; }
     public void setGene3entrezId(String gene3entrezId) { this.gene3entrezId = gene3entrezId; }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public String getGeneDescription() { return geneDescription; }
+    public void setGeneDescription(String geneDescription) {  this.geneDescription = geneDescription; }
 
     public String getVariantDescription() { return variantDescription; }
     public void setVariantDescription(String variantDescription) { this.variantDescription = variantDescription; }

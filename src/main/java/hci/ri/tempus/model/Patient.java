@@ -1,9 +1,6 @@
 package hci.ri.tempus.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import javax.persistence.*;
@@ -68,9 +65,10 @@ public class Patient {
     public void setTempusId(String tempusId) {
         this.tempusId = tempusId;
     }
-
-    //breaking convention with camel case for this version :( tempus
-    @JsonProperty(value = "emr_id")
+    //jsonProperty used to capture what tempus calls the variable in json
+    //this one is no longer needed because it is the same as the dbName
+    @JsonProperty(value = "emrId")
+    @JsonAlias({"emr_id"})
     @Column(name="emrId")
     public String getEmrId() {
         return emrId;
@@ -86,8 +84,8 @@ public class Patient {
     public void setSex(String sex) {
         this.sex = sex;
     }
-
-    @JsonProperty(value = "DoB")
+    @JsonProperty(value = "dateOfBirth")
+    @JsonAlias({"DoB"})
     @Column(name="dateOfBirth")
     public String getDateOfBirth() {
         return dateOfBirth;

@@ -17,6 +17,7 @@
         <class>hci.ri.tempus.model.SPActionableCPVariant</class>
         <class>hci.ri.tempus.model.SPBioRelevantVariant</class>
         <class>hci.ri.tempus.model.Variant</class>
+        <class>hci.ri.tempus.model.PertinentNegativeGene</class>
         <class>hci.ri.tempus.model.SVUknownSignificance</class>
         <class>hci.ri.tempus.model.InheritedVariant</class>
         <class>hci.ri.tempus.model.LowCoverageAmplicon</class>
@@ -25,6 +26,12 @@
         <class>hci.ri.tempus.model.InheritedRelevantVariant</class>
         <class>hci.ri.tempus.model.InheritedUnknownSignificanceVariant</class>
         <class>hci.ri.tempus.model.InheritedVariantValue</class>
+        <class>hci.ri.tempus.model.TempusLinkedPatient</class>
+        <class>hci.ri.tempus.model.IhcFinding</class>
+        <class>hci.ri.tempus.model.IhcAntigen</class>
+        <class>hci.ri.tempus.model.IhcMmr</class>
+        <class>hci.ri.tempus.model.HrdFinding</class>
+        <class>hci.ri.tempus.model.MicrosatelliteInstability</class>
         <properties>
             <!-- The JDBC driver of your database -->
             <property name = "hibernate.show_sql" value = "true" />
