@@ -32,9 +32,10 @@
         <class>hci.ri.tempus.model.IhcMmr</class>
         <class>hci.ri.tempus.model.HrdFinding</class>
         <class>hci.ri.tempus.model.MicrosatelliteInstability</class>
+        <class>hci.ri.tempus.model.RnaFinding</class>
         <properties>
             <!-- The JDBC driver of your database -->
-            <property name = "hibernate.show_sql" value = "true" />
+             <property name = "hibernate.show_sql" value = "true" />
             <property name="hibernate.dialect" value="org.hibernate.dialect.SQLServerDialect"/>
         </properties>
     </persistence-unit>

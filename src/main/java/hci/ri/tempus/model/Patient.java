@@ -67,6 +67,7 @@ public class Patient {
     }
     //jsonProperty used to capture what tempus calls the variable in json
     //this one is no longer needed because it is the same as the dbName
+    //alias is for backward compatibility
     @JsonProperty(value = "emrId")
     @JsonAlias({"emr_id"})
     @Column(name="emrId")

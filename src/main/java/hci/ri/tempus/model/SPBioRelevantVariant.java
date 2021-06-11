@@ -1,5 +1,6 @@
 package hci.ri.tempus.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -70,7 +71,9 @@ public class SPBioRelevantVariant {
 
     public String getGene5() { return gene5;}
     public void setGene5(String gene5) { this.gene5 = gene5; }
-    @JsonProperty("gene5display")
+
+    @JsonProperty("gene5Display")
+    @JsonAlias({"gene5display"})
     @Column(name="gene5display")
     public String getGene5display() { return gene5display; }
     public void setGene5display(String gene5display) { this.gene5display = gene5display; }
@@ -88,7 +91,8 @@ public class SPBioRelevantVariant {
     public String getGene3() { return gene3; }
     public void setGene3(String gene3) { this.gene3 = gene3; }
 
-    @JsonProperty("gene3display")
+    @JsonProperty("gene3Display")
+    @JsonAlias({"gene3display"})
     @Column(name="gene3display")
     public String getGene3display() { return gene3display; }
     public void setGene3display(String gene3display) { this.gene3display = gene3display; }

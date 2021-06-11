@@ -41,6 +41,7 @@ public class InheritedVariant {
         this.result = result;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
 

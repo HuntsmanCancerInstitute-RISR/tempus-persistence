@@ -191,7 +191,8 @@ public class TempusSample{
         if (o == null || getClass() != o.getClass()) return false;
         TempusSample that = (TempusSample) o;
         return getMrn().equals(that.getMrn()) &&
-                getFullName().equals(that.fullName) &&
+                getSampleName().equals(that.sampleName) &&
+                getTestType().equals(that.testType) &&
                 getPersonId().equals(that.getPersonId()) &&
                 getShadowId().equals(that.getShadowId());
     }
