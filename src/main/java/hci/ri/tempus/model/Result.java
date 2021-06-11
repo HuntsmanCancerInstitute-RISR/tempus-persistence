@@ -153,7 +153,8 @@ public class Result {
 
     @JsonProperty
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Transient
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL,  orphanRemoval = true)
+    @JoinColumn(name="idResult", nullable= false)
     public Set<RnaFinding> getRnaFindings() { return rnaFindings; }
     public void setRnaFindings(Set<RnaFinding> rnaFindings) { this.rnaFindings = rnaFindings; }
 

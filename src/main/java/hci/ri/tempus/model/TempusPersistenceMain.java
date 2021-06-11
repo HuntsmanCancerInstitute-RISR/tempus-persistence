@@ -34,6 +34,7 @@ public class TempusPersistenceMain {
             tParser.parseTempusFileList(tempFileList,tempOtherFileList, manager);
             tParser.importTempusFile(manager,tempFileList);
             tParser.outParseResults(tempOtherFileList);
+            tParser.addDeidentJsonToFileList();
             tParser.saveLogFile();
 
         }catch (Exception e){

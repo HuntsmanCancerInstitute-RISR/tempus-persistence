@@ -21,6 +21,7 @@ public class TempusFile {
     private Report report;
     private Result results;
     private MetaData metadata;
+    private String idJson;
     private Object lab;
     private Object clinicalTrials;
 
@@ -84,4 +85,13 @@ public class TempusFile {
     @Transient
     public Object getClinicalTrials() { return clinicalTrials; }
     public void setClinicalTrials(Object clinicalTrials) { this.clinicalTrials = clinicalTrials; }
+
+    @JsonIgnore
+    @Column(name = "tempusJsonId")
+    public String getJsonId() {
+        return this.idJson;
+    }
+    public void setJsonId(String idJson) {
+        this.idJson = idJson;
+    }
 }
