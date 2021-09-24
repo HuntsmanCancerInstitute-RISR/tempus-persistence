@@ -1,9 +1,6 @@
 package hci.ri.tempus.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
 
 import javax.persistence.*;
 import java.util.Objects;
@@ -15,6 +12,14 @@ public class HrdFinding {
     private Double genomeWideLoh;
     private Integer cohortSpecificGenomeWideLohThreshold;
     private Result result;
+    private String percentGenomeWideLoh;
+    private String percentCohortSpecificGenomeWideLohThreshold;
+    private String brcaDoubleHit;
+    private String hrdAnalysisType;
+    private String rnaExpressionHrdScore;
+    private String rnaExpressionThreshold;
+
+
 
     public HrdFinding() {
     }
@@ -29,18 +34,18 @@ public class HrdFinding {
     public void setIdHrdFinding(long idHrdFinding) {
         this.idHrdFinding = idHrdFinding;
     }
+
     public String getHrdResult() {
         return hrdResult;
     }
-
     public void setHrdResult(String hrdResult) {
         this.hrdResult = hrdResult;
     }
 
+
     public Double getGenomeWideLoh() {
         return genomeWideLoh;
     }
-
     public void setGenomeWideLoh(Double genomeWideLoh) {
         this.genomeWideLoh = genomeWideLoh;
     }
@@ -48,9 +53,40 @@ public class HrdFinding {
     public Integer getCohortSpecificGenomeWideLohThreshold() {
         return cohortSpecificGenomeWideLohThreshold;
     }
-
     public void setCohortSpecificGenomeWideLohThreshold(Integer cohortSpecificGenomeWideLohThreshold) {
         this.cohortSpecificGenomeWideLohThreshold = cohortSpecificGenomeWideLohThreshold;
+    }
+
+    public String getPercentGenomeWideLoh() { return percentGenomeWideLoh;}
+    public void setPercentGenomeWideLoh(String percentGenomeWideLoh) {
+        this.percentGenomeWideLoh = percentGenomeWideLoh;
+    }
+
+    public String getPercentCohortSpecificGenomeWideLohThreshold() {
+        return percentCohortSpecificGenomeWideLohThreshold;
+    }
+    public void setPercentCohortSpecificGenomeWideLohThreshold(String percentCohortSpecificGenomeWideLohThreshold) {
+        this.percentCohortSpecificGenomeWideLohThreshold = percentCohortSpecificGenomeWideLohThreshold;
+    }
+
+    public String getBrcaDoubleHit() {return brcaDoubleHit;}
+    public void setBrcaDoubleHit(String brcaDoubleHit) {
+        this.brcaDoubleHit = brcaDoubleHit;
+    }
+
+    public String getHrdAnalysisType() {return hrdAnalysisType;}
+    public void setHrdAnalysisType(String hrdAnalysisType) {
+        this.hrdAnalysisType = hrdAnalysisType;
+    }
+
+    public String getRnaExpressionHrdScore() {return rnaExpressionHrdScore;}
+    public void setRnaExpressionHrdScore(String rnaExpressionHrdScore) {
+        this.rnaExpressionHrdScore = rnaExpressionHrdScore;
+    }
+    // this would need @JsonProperty annotation if we didn't have a deserializer since the property is called 'threshold'
+    public String getRnaExpressionThreshold() {return rnaExpressionThreshold;}
+    public void setRnaExpressionThreshold(String rnaExpressionThreshold) {
+        this.rnaExpressionThreshold = rnaExpressionThreshold;
     }
 
     @JsonBackReference("result_hrdfinding")
@@ -75,4 +111,6 @@ public class HrdFinding {
     public int hashCode() {
         return Objects.hash(idHrdFinding, hrdResult, genomeWideLoh);
     }
+
+
 }

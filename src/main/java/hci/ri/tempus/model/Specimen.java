@@ -20,7 +20,8 @@ public class Specimen {
     private String sampleType;
     private String notes;
     private Integer tumorPercentage;
-    //private TempusFile tempusFile;
+
+//private TempusFile tempusFile;
 
     public Specimen(){
     }
@@ -32,6 +33,8 @@ public class Specimen {
     public long getIdSpecimen() { return idSpecimen; }
     public void setIdSpecimen(long idSpecimen) { this.idSpecimen = idSpecimen; }
 
+    @JsonIgnore
+    @Transient
     @Column(name="tempusSampleId")
     public String getTempusSampleId() { return tempusSampleId; }
     public void setTempusSampleId(String tempusSampleId) { this.tempusSampleId = tempusSampleId; }
