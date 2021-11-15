@@ -591,7 +591,7 @@ public class TempusParser {
             }
 
         }catch(Exception e){
-         if(transaction != null){
+            if(transaction != null){
                 transaction.rollback();;
             }
             e.printStackTrace();
@@ -650,7 +650,7 @@ public class TempusParser {
     public List<TempusSample> findImportedJson(EntityManager manager, String accessionId){
         List<TempusSample> samples = new ArrayList<>();
         List tempusFileEntry = manager.createQuery("SELECT lp.idTempusFile, lp.HCIPersonID FROM TempusLinkedPatient lp " +
-                "WHERE lp.accessionId LIKE :accessionId")
+                        "WHERE lp.accessionId LIKE :accessionId")
                 .setParameter("accessionId", "%" + accessionId + "%")
                 .getResultList();
         Long idTempusFile = null;
@@ -684,7 +684,7 @@ public class TempusParser {
                     String sampleCategory =  speci.getSampleCategory();
                     String sampleSite = speci.getSampleSite();
                     String sampleType = speci.getSampleType();
-                    String sampleName = tf.getJsonId() != null && !tf.getJsonId().equals("") ? tf.getJsonId() : "result-unknown";
+                    String sampleName = tf.getJsonId() != null && !tf.getJsonId().equals("") ? tf.getJsonId() : "result_"+ tf.getReport().getReportId();
 
                     s.setMrn(noEmptyStrDelimiter(emr));
                     s.setPersonId(noEmptyStrDelimiter("" + hciPersonId));
@@ -717,21 +717,15 @@ public class TempusParser {
 
         manager.getTransaction().begin();
 
-        List tempusFileEntry = manager.createQuery("Select p.idPerson  " +
-                "from TempusFile tf " +
-                "JOIN tf.order o " +
-                "JOIN tf.patient p where o.accessionId LIKE :jsonID ")
-                .setParameter("jsonID", "%" + jsonID + "%")
+        List tempusFileEntry = new ArrayList();
+        String hciPersonID = null;
+
+        tempusFileEntry = manager.createQuery("SELECT p.HCIPersonID FROM TempusLinkedPatient p " +
+                        "WHERE p.accessionId LIKE :accessionID")
+                .setParameter("accessionID", "%" + tempusFile.getOrder().getAccessionId() + "%")
                 .getResultList();
-        // unsure why but this brings back one row that is null if it can't find jsonID being queried
-        String hciPersonID = tempusFileEntry.size() > 0 ? tempusFileEntry.get(0) != null ? ""+ tempusFileEntry.get(0)  : null : null;
-        if(hciPersonID == null ){
-            tempusFileEntry = manager.createQuery("SELECT p.HCIPersonID FROM TempusLinkedPatient p " +
-                    "WHERE p.accessionId LIKE :jsonID")
-                    .setParameter("jsonID", "%" + jsonID + "%")
-                    .getResultList();
-            hciPersonID = tempusFileEntry.size() > 0 ? ""+ tempusFileEntry.get(0) : null;
-        }
+        hciPersonID = tempusFileEntry.size() > 0 ? ""+ tempusFileEntry.get(0) : null;
+
 
         if(hciPersonID != null){
             String diagnosis = tempusFile.getPatient().getDiagnosis();

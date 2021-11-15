@@ -31,8 +31,8 @@
         <class>hci.ri.tempus.model.IhcAntigen</class>
         <class>hci.ri.tempus.model.IhcMmr</class>
         <class>hci.ri.tempus.model.HrdFinding</class>
-        <class>hci.ri.tempus.model.MicrosatelliteInstability</class>
         <class>hci.ri.tempus.model.RnaFinding</class>
+        <class>hci.ri.tempus.model.MicrosatelliteInstability</class>
         <properties>
             <!-- The JDBC driver of your database -->
              <property name = "hibernate.show_sql" value = "true" />
