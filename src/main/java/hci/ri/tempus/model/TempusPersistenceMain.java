@@ -31,11 +31,18 @@ public class TempusPersistenceMain {
             //findTempusFile(manager);
             List<TempusFile> tempFileList = new ArrayList<TempusFile>();
             Map<String,List<TempusSample>> tempOtherFileList = new HashMap<String,List<TempusSample>>();
-            tParser.parseTempusFileList(tempFileList,tempOtherFileList, manager);
-            tParser.importTempusFile(manager,tempFileList);
-            tParser.outParseResults(tempOtherFileList);
-            tParser.addDeidentJsonToFileList();
-            tParser.saveLogFile();
+            if(!tParser.reportOnly){
+                tParser.parseTempusFileList(tempFileList,tempOtherFileList, manager);
+                tParser.importTempusFile(manager,tempFileList);
+                tParser.outParseResults(tempOtherFileList);
+                tParser.addDeidentJsonToFileList();
+                tParser.saveLogFile();
+            }else {
+                tParser.parseTempusFileList(tempFileList,tempOtherFileList, manager);
+                tParser.reportPairJsonFastq(tempOtherFileList, manager);
+                tParser.saveLogFile();
+            }
+
 
         }catch (Exception e){
             e.getMessage();

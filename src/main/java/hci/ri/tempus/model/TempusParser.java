@@ -27,16 +27,20 @@ public class TempusParser {
     private static final String SCHEMA_VER_ACCEPTED = "1.4";
     private static final Integer SAMPLE_ID_START= 7;
     private static final Integer SAMPLE_ID_END = 13;
-    private Map<String,Specimen> specimenMap;
+    private Map<String,TempusSample> sampleMap;
     private static final Integer nucLen = 4; // ex -RNA
     private ObjectMapper objectMapper;
     private List<String> logList;
     private List<String> newDeidentJsonList;
+    public boolean reportOnly;
 
 
     public TempusParser(String[] args){
         logList = new ArrayList<>();
+        reportOnly = false;
         newDeidentJsonList = new ArrayList<>();
+
+
         for(int i = 0; i < args.length; i++){
             args[i] = args[i].toLowerCase();
             if(args[i].equals("-cred")){
@@ -51,7 +55,9 @@ public class TempusParser {
                 logFile = args[++i];
             }else if(args[i].equals("-ld")){ //local datafile
                 localDataFile = args[++i];
-            } else if(args[i].equals("-help")){
+            } else if (args[i].equals("-r")) {
+                this.reportOnly = true;
+            } else if (args[i].equals("-help")) {
                 help();
                 System.exit(0);
             }
@@ -90,7 +96,7 @@ public class TempusParser {
 
 
         Map<String,String> propMap = new HashMap<String,String>();
-        specimenMap = new HashMap<>();
+        sampleMap = new HashMap<>();
     }
 
     private void help(){
@@ -182,16 +188,15 @@ public class TempusParser {
                 jsonPathPlusFile.setLength(0);
 
             }
+            if(!reportOnly){
+                sc = new PeekableScanner(new File( tempusJsonFileList));
+                this.associateMetaDataWithFastqData(tempusOtherFileList, sc, manager);
+                sc = new PeekableScanner(new File( localDataFile));
+                // look at whole local disc to see if we already imported data
+                this.localDataFilter(tempusOtherFileList, sc);
 
-
-            sc = new PeekableScanner(new File( tempusJsonFileList));
-            this.associateMetaDataWithFastqData(tempusOtherFileList, sc, manager);
-            sc = new PeekableScanner(new File( localDataFile));
-            // look at whole local disc to see if we already imported data
-            this.localDataFilter(tempusOtherFileList, sc);
-
-            verifyHasDataWithMeta(tempusOtherFileList);
-
+                verifyHasDataWithMeta(tempusOtherFileList);
+            }
 
         }catch(Exception e){
             e.printStackTrace();
@@ -708,6 +713,110 @@ public class TempusParser {
         return samples.size() > 0 ? samples : null;
 
     }
+    public void reportPairJsonFastq(Map<String, List<TempusSample>> tempusOtherFileList,
+                                    EntityManager manager) {
+        PeekableScanner sc = null;
+
+        try {
+            sc = new PeekableScanner(new File(tempusJsonFileList));
+            String prevAccessionID = "";
+            logList.clear();
+            StringBuilder strBuilder = new StringBuilder();
+            while(sc.hasNext()) {
+
+                String line = sc.next();
+
+                //all fastq/md5s files will be in DNA OR RNA folder
+                String pattern = Pattern.quote(System.getProperty("file.separator"));
+                String[] fileChunks = getFileChunks(line, pattern);//File.separator);
+                String fileName = fileChunks[fileChunks.length - 1];
+                if (!fileName.endsWith("fastq.gz")) {
+                    continue;
+                }
+
+
+                String[] chunks = fileName.split("_");
+                List<String> chunkList = new ArrayList<String>(Arrays.asList(chunks));
+                String fileTestType = "";
+
+                String nucType = fileChunks[0];// chunks[0].substring(chunks[0].length() - nucLen + 1);
+                int nucIdx = chunks[0].indexOf(nucType);
+                String excludeNucFilename = chunks[0];
+                if (nucIdx > 0) {
+                    // if DNA or RNA found we assume it is at the end since previous script follows that standard
+                    excludeNucFilename = chunks[0].substring(0, chunks[0].length() - nucLen);
+                }
+
+
+                List<TempusSample> samples = tempusOtherFileList.get(excludeNucFilename);
+                boolean isStart = !prevAccessionID.equals(excludeNucFilename);
+
+                if(samples != null  && samples.size() > 0){
+                    if(isStart){
+                        sampleMap.remove(samples.get(0).getSampleName());
+                        if(!prevAccessionID.equals("")){
+                            logList.add(strBuilder.toString());
+                        }
+                        prevAccessionID = excludeNucFilename;
+                        if(!samples.get(0).getPersonId().equals( "null")){
+                            strBuilder = new StringBuilder("PI (");
+                            strBuilder.append(samples.get(0).getPersonId());
+                        }else {
+                            strBuilder = new StringBuilder("MRN (");
+                            strBuilder.append(samples.get(0).getMrn());
+                        }
+
+                        strBuilder.append(")");
+                        strBuilder.append(samples.get(0).getSampleName());
+                        strBuilder.append(": ");
+                        strBuilder.append(fileName);
+                        strBuilder.append(" ");
+
+                    }else {
+                        strBuilder.append(fileName);
+                        strBuilder.append(" ");
+                    }
+                }else {
+                    if(isStart){ // is start of new fastq
+                        prevAccessionID = excludeNucFilename;
+                        logList.add(strBuilder.toString());
+                        strBuilder = new StringBuilder("Unpaired no json: ");
+                        strBuilder.append(excludeNucFilename);
+                    }
+                }
+
+
+            }
+            if(strBuilder.length() > 0){
+                logList.add(strBuilder.toString());
+            }
+            strBuilder = new StringBuilder();
+            for(Map.Entry<String,TempusSample> entry : sampleMap.entrySet() ){
+                TempusSample tSample = entry.getValue();
+                strBuilder.append("Unpaired no fastq");
+                if(tSample.getPersonId().equals("null")){
+                    strBuilder.append(" MRN(");
+                    strBuilder.append(tSample.getMrn());
+                }else {
+                    strBuilder.append(" PI(");
+                    strBuilder.append(tSample.getPersonId());
+                }
+
+                strBuilder.append(") ");
+                strBuilder.append(tSample.getSampleName());
+                logList.add(strBuilder.toString());
+                strBuilder = new StringBuilder();
+            }
+            Collections.sort(this.logList);
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            sc.close();
+        }finally {
+            sc.close();
+        }
+
+    }
 
     public void findLinkableJsons(EntityManager manager,  String jsonFileName, Map<String,List<TempusSample>> otherFileMap, TempusFile tempusFile ){
         // getting just the id that is shared between the fastq file and the json id
@@ -727,7 +836,7 @@ public class TempusParser {
         hciPersonID = tempusFileEntry.size() > 0 ? ""+ tempusFileEntry.get(0) : null;
 
 
-        if(hciPersonID != null){
+        if(hciPersonID != null || reportOnly){
             String diagnosis = tempusFile.getPatient().getDiagnosis();
             String fullName = tempusFile.getPatient().getFirstName() + " " + tempusFile.getPatient().getLastName();
             String sex = tempusFile.getPatient().getSex();
@@ -774,9 +883,13 @@ public class TempusParser {
                     otherFileMap.get(accessionNumber).add(s);
 
                 }
+                if(reportOnly){
+                    sampleMap.put(jsonNameOnly, s);
+                }
+
             }
 
-        }else{
+        }else {
             System.out.println("Warning: No hci person id can be found for this these files "
                     + tempusFile.getOrder().getAccessionId() + " AND "  + jsonFileName + ". The emr id is: " + tempusFile.getPatient().getEmrId() );
             logList.add("Warning: No hci person id can be found for this these files "
@@ -834,8 +947,12 @@ public class TempusParser {
     }
 
     public void saveLogFile() throws FileNotFoundException {
+        if(reportOnly && logFile != null){
+            logFile = logFile.split("\\.")[0] + "Report.txt";
+        }
+
         if(logFile != null ){
-            try(PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(logFile,true)))){
+            try(PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(logFile,!reportOnly)))){
                 for(String log : logList){
                     writer.println(log);
                 }
